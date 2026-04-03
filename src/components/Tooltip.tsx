@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, Modal, Pressable,
-  LayoutRectangle,
+  LayoutRectangle, StyleProp, ViewStyle,
 } from 'react-native';
 import { Colors, Spacing, FontSize } from '../constants/theme';
 
@@ -9,9 +9,10 @@ interface TooltipProps {
   title: string;
   body: string;
   children: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
 }
 
-export function Tooltip({ title, body, children }: TooltipProps) {
+export function Tooltip({ title, body, children, style }: TooltipProps) {
   const [visible, setVisible] = useState(false);
 
   return (
@@ -19,7 +20,7 @@ export function Tooltip({ title, body, children }: TooltipProps) {
       <TouchableOpacity
         activeOpacity={0.7}
         onPress={() => setVisible(true)}
-        style={styles.trigger}
+        style={[styles.trigger, style]}
       >
         {children}
         <View style={styles.infoBadge}>

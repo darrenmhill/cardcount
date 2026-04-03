@@ -142,6 +142,7 @@ export default function CountScreen() {
           <Tooltip
             title="Cards Dealt"
             body="The total number of cards that have been dealt from the shoe so far. Use this to estimate how deep into the shoe you are and how reliable the count is. Early counts are less reliable than counts deeper into the shoe."
+            style={styles.statTooltip}
           >
             <View style={styles.statBox}>
               <Text style={styles.statValue}>{cardsDealt}</Text>
@@ -151,6 +152,7 @@ export default function CountScreen() {
           <Tooltip
             title="Cards Remaining"
             body="The estimated number of undealt cards left in the shoe. This is calculated as (total cards in shoe) minus (cards dealt). Used internally to calculate decks remaining for the true count conversion."
+            style={styles.statTooltip}
           >
             <View style={styles.statBox}>
               <Text style={styles.statValue}>{cardsRemaining}</Text>
@@ -160,6 +162,7 @@ export default function CountScreen() {
           <Tooltip
             title="Decks Remaining"
             body="The estimated number of full decks left in the shoe. This is the key divisor for converting running count to true count: TC = RC / Decks Remaining. In a casino, estimate this by looking at the discard tray. Round to the nearest half-deck for mental math."
+            style={styles.statTooltip}
           >
             <View style={styles.statBox}>
               <Text style={styles.statValue}>{decksRemaining.toFixed(1)}</Text>
@@ -169,6 +172,7 @@ export default function CountScreen() {
           <Tooltip
             title="Deck Penetration"
             body="The percentage of the shoe that has been dealt. Higher penetration (more cards dealt) gives the counter a bigger advantage because the count becomes more accurate. Most casinos deal 70-80% of a shoe. Below 60% penetration, card counting becomes much less effective."
+            style={styles.statTooltip}
           >
             <View style={styles.statBox}>
               <Text style={styles.statValue}>{penetrationPct}%</Text>
@@ -198,9 +202,11 @@ export default function CountScreen() {
           body={`The suggested bet size in units based on the current true count and a ${rules.numDecks <= 2 ? '1-8' : '1-12'} betting spread.\n\nA "unit" is your minimum bet amount (e.g., $10 or $25). When the count is negative or zero, bet the minimum (1 unit). As the count rises, increase your bet proportionally.\n\nThis spread balances profit potential against detection risk. Larger spreads earn more but attract more attention from casino surveillance. Never bet more than your bankroll can sustain.`}
         >
           <View style={[styles.betBox, { borderColor: tcColor }]}>
-            <Text style={styles.betLabel}>RECOMMENDED BET</Text>
-            <Text style={[styles.betUnits, { color: tcColor }]}>{bet.units} Unit{bet.units !== 1 ? 's' : ''}</Text>
-            <Text style={styles.betDesc}>{bet.description}</Text>
+            <Text style={[styles.betUnits, { color: tcColor }]}>{bet.units}x</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.betLabel}>BET</Text>
+              <Text style={styles.betDesc}>{bet.description}</Text>
+            </View>
           </View>
         </Tooltip>
 
@@ -365,27 +371,33 @@ const styles = StyleSheet.create({
   },
   statsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     marginBottom: Spacing.lg,
+    gap: 6,
+  },
+  statTooltip: {
+    flex: 1,
   },
   statBox: {
-    flex: 1,
     alignItems: 'center',
     backgroundColor: Colors.surface,
-    marginHorizontal: 3,
     paddingVertical: Spacing.sm,
     borderRadius: 8,
+    height: 52,
+    justifyContent: 'center',
   },
   statValue: {
     color: Colors.text,
-    fontSize: FontSize.lg,
+    fontSize: FontSize.md,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
   },
   statLabel: {
     color: Colors.textDim,
-    fontSize: FontSize.xs,
+    fontSize: 9,
+    fontWeight: '600',
     marginTop: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   aceTracker: {
     backgroundColor: Colors.surfaceLight,
@@ -401,28 +413,29 @@ const styles = StyleSheet.create({
   },
   betBox: {
     backgroundColor: Colors.surface,
-    padding: Spacing.lg,
-    borderRadius: 12,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: 10,
     borderWidth: 1,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   betLabel: {
     color: Colors.textDim,
-    fontSize: FontSize.xs,
+    fontSize: 9,
     fontWeight: '700',
-    letterSpacing: 1.5,
-    marginBottom: Spacing.xs,
+    letterSpacing: 1,
   },
   betUnits: {
-    fontSize: FontSize.xxxl,
+    fontSize: FontSize.xl,
     fontWeight: '800',
+    marginRight: Spacing.md,
   },
   betDesc: {
     color: Colors.textSecondary,
-    fontSize: FontSize.sm,
-    marginTop: Spacing.xs,
-    textAlign: 'center',
+    fontSize: FontSize.xs,
+    flex: 1,
   },
   deviationAlert: {
     backgroundColor: Colors.surfaceLight,
