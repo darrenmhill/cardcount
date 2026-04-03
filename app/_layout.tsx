@@ -38,10 +38,13 @@ export default function Layout() {
   const loadSettings = useStore(s => s.loadSettings);
   const trueCount = useStore(s => s.trueCount);
   const cardsDealt = useStore(s => s.cardsDealt);
+  const decksRemaining = useStore(s => s.decksRemaining);
   const surrenderAvailable = useStore(s => s.rules.surrenderAvailable);
+  const numDecks = useStore(s => s.rules.numDecks);
+  const systemId = useStore(s => s.systemId);
 
   const activeDevCount = cardsDealt > 0
-    ? getActiveDeviations(trueCount, surrenderAvailable !== 'none').length
+    ? getActiveDeviations(trueCount, surrenderAvailable !== 'none', systemId, numDecks, decksRemaining).length
     : 0;
 
   useEffect(() => {

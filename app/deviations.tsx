@@ -5,7 +5,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../src/store/useStore';
 import { Colors, Spacing, FontSize } from '../src/constants/theme';
-import { ILLUSTRIOUS_18, FAB_4, ADDITIONAL_DEVIATIONS, getActiveDeviations } from '../src/engine/deviations';
+import { ILLUSTRIOUS_18, FAB_4, ADDITIONAL_DEVIATIONS, getActiveDeviations, getDeviationDisplayIndex } from '../src/engine/deviations';
 import { getActionColor } from '../src/engine/basicStrategy';
 import { COUNTING_SYSTEMS } from '../src/engine/countingSystems';
 import { DeviationPlay } from '../src/types';
@@ -13,13 +13,14 @@ import { DeviationPlay } from '../src/types';
 type Filter = 'all' | 'active' | 'illustrious18' | 'fab4' | 'additional';
 
 export default function DeviationsScreen() {
-  const { trueCount, rules, cardsDealt, systemId } = useStore();
+  const { trueCount, rules, cardsDealt, systemId, decksRemaining } = useStore();
   const [filter, setFilter] = useState<Filter>('all');
   const [expanded, setExpanded] = useState<string | null>(null);
 
+  const system = COUNTING_SYSTEMS[systemId];
   const surrenderAvail = rules.surrenderAvailable !== 'none';
   const activeDevs = cardsDealt > 0
-    ? getActiveDeviations(trueCount, surrenderAvail)
+    ? getActiveDeviations(trueCount, surrenderAvail, systemId, rules.numDecks, decksRemaining)
     : [];
   const activeIds = new Set(activeDevs.map(d => d.id));
 
@@ -54,11 +55,19 @@ export default function DeviationsScreen() {
         <Text style={styles.tcActive}>
           {activeDevs.length} active deviation{activeDevs.length !== 1 ? 's' : ''}
         </Text>
-        {systemId !== 'hi-lo' && (
+        {systemId === 'ace-five' ? (
           <Text style={styles.tcNote}>
-            Indices are calibrated for Hi-Lo. Values are approximate for {COUNTING_SYSTEMS[systemId].name}.
+            Ace-Five is too simple for deviation plays. Switch to a full counting system.
           </Text>
-        )}
+        ) : !system.balanced ? (
+          <Text style={styles.tcNote}>
+            {system.name} is unbalanced — indices shown as Running Count thresholds for {rules.numDecks}-deck.
+          </Text>
+        ) : systemId !== 'hi-lo' ? (
+          <Text style={styles.tcNote}>
+            Indices adjusted for {system.name}.
+          </Text>
+        ) : null}
       </View>
 
       {/* Filter tabs */}
@@ -111,9 +120,14 @@ export default function DeviationsScreen() {
                     </Text>
                   </View>
                   <View style={styles.devRight}>
-                    <Text style={styles.devIndex}>
-                      TC {dev.direction === '>=' ? '≥' : '≤'} {dev.index > 0 ? '+' : ''}{dev.index}
-                    </Text>
+                    {(() => {
+                      const di = getDeviationDisplayIndex(dev, systemId, rules.numDecks, decksRemaining);
+                      return (
+                        <Text style={styles.devIndex}>
+                          {di.label} {dev.direction === '>=' ? '≥' : '≤'} {di.value > 0 ? '+' : ''}{di.value}
+                        </Text>
+                      );
+                    })()}
                   </View>
                 </View>
 

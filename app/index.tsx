@@ -40,7 +40,7 @@ export default function CountScreen() {
   const penetrationPct = ((cardsDealt / totalCards) * 100).toFixed(0);
   const bet = getRecommendedBet(Math.floor(trueCount), rules.numDecks);
   const activeDevs = cardsDealt > 0
-    ? getActiveDeviations(trueCount, rules.surrenderAvailable !== 'none')
+    ? getActiveDeviations(trueCount, rules.surrenderAvailable !== 'none', systemId, rules.numDecks, decksRemaining)
     : [];
 
   const tcColor = trueCount > 0 ? Colors.positive : trueCount < 0 ? Colors.negative : Colors.neutral;

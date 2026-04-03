@@ -60,7 +60,8 @@ export interface DeviationPlay {
   dealerUpcard: string; // e.g. "10", "A"
   normalAction: Action;
   deviationAction: Action;
-  index: number; // true count threshold
+  index: number; // Hi-Lo true count threshold (canonical)
+  systemIndices?: Partial<Record<CountingSystemId, number>>; // per-system overrides
   direction: '>=' | '<='; // deviate when TC >= or <= index
   category: 'illustrious18' | 'fab4' | 'additional';
   description: string;

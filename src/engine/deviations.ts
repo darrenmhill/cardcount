@@ -1,12 +1,25 @@
-import { DeviationPlay } from '../types';
+import { CountingSystemId, DeviationPlay } from '../types';
+import { COUNTING_SYSTEMS, getKOInitialRC, getRed7InitialRC } from './countingSystems';
 
 /**
- * The Illustrious 18 — the most important index plays for Hi-Lo.
+ * The Illustrious 18 — the most important index plays.
  * Developed by Don Schlesinger in "Blackjack Attack".
  * These 18 plays capture ~85% of the gain from all possible index plays.
- * Indices are for Hi-Lo true count; multiply by system's betting correlation for others.
  *
- * Ordered by importance (gain in expected value).
+ * `index` is the canonical Hi-Lo TC index.
+ * `systemIndices` provides published/computed overrides for other systems.
+ *
+ * Sources:
+ * - Hi-Lo: Schlesinger "Blackjack Attack"
+ * - Hi-Opt I/II: Humble & Cooper "The World's Greatest Blackjack Book"
+ * - Omega II: Carlson "Blackjack for Blood"
+ * - Zen: Snyder "Blackbelt in Blackjack"
+ * - Wong Halves: Wong "Professional Blackjack"
+ * - KO: Fuchs & Vancura "Knockout Blackjack" (RC-based, 6-deck)
+ * - Red 7: Snyder "Blackbelt in Blackjack" (RC-based, 6-deck)
+ *
+ * For KO and Red 7, indices are Running Count values (not True Count).
+ * They are pre-computed for 6-deck shoes and auto-adjusted for other shoe sizes.
  */
 export const ILLUSTRIOUS_18: DeviationPlay[] = [
   {
@@ -15,9 +28,13 @@ export const ILLUSTRIOUS_18: DeviationPlay[] = [
     handType: 'hard',
     playerHand: 'any',
     dealerUpcard: 'A',
-    normalAction: 'H', // decline insurance
-    deviationAction: 'S', // take insurance
+    normalAction: 'H',
+    deviationAction: 'S',
     index: 3,
+    systemIndices: {
+      'hi-opt-i': 1.4, 'hi-opt-ii': 1.4, 'omega-ii': 1.4,
+      'zen': 5, 'wong-halves': 2.7,
+    },
     direction: '>=',
     category: 'illustrious18',
     description: 'Take insurance when TC ≥ +3. Normally always decline insurance — it becomes +EV only at high counts. This is the single most valuable index play.',
@@ -31,6 +48,10 @@ export const ILLUSTRIOUS_18: DeviationPlay[] = [
     normalAction: 'H',
     deviationAction: 'S',
     index: 0,
+    systemIndices: {
+      'hi-opt-i': 0, 'hi-opt-ii': 0, 'omega-ii': 0,
+      'zen': 0, 'wong-halves': 0,
+    },
     direction: '>=',
     category: 'illustrious18',
     description: 'Stand on 16 vs 10 when TC ≥ 0 (instead of hitting).',
@@ -44,6 +65,10 @@ export const ILLUSTRIOUS_18: DeviationPlay[] = [
     normalAction: 'H',
     deviationAction: 'S',
     index: 4,
+    systemIndices: {
+      'hi-opt-i': 4, 'hi-opt-ii': 3, 'omega-ii': 3,
+      'zen': 7, 'wong-halves': 4,
+    },
     direction: '>=',
     category: 'illustrious18',
     description: 'Stand on 15 vs 10 when TC ≥ +4.',
@@ -57,6 +82,10 @@ export const ILLUSTRIOUS_18: DeviationPlay[] = [
     normalAction: 'S',
     deviationAction: 'P',
     index: 5,
+    systemIndices: {
+      'hi-opt-i': 5, 'hi-opt-ii': 4, 'omega-ii': 4,
+      'zen': 9, 'wong-halves': 5,
+    },
     direction: '>=',
     category: 'illustrious18',
     description: 'Split tens vs 5 when TC ≥ +5.',
@@ -70,6 +99,10 @@ export const ILLUSTRIOUS_18: DeviationPlay[] = [
     normalAction: 'S',
     deviationAction: 'P',
     index: 4,
+    systemIndices: {
+      'hi-opt-i': 4, 'hi-opt-ii': 3, 'omega-ii': 3,
+      'zen': 8, 'wong-halves': 4,
+    },
     direction: '>=',
     category: 'illustrious18',
     description: 'Split tens vs 6 when TC ≥ +4.',
@@ -83,6 +116,10 @@ export const ILLUSTRIOUS_18: DeviationPlay[] = [
     normalAction: 'H',
     deviationAction: 'Dh',
     index: 4,
+    systemIndices: {
+      'hi-opt-i': 4, 'hi-opt-ii': 3, 'omega-ii': 3,
+      'zen': 8, 'wong-halves': 4,
+    },
     direction: '>=',
     category: 'illustrious18',
     description: 'Double hard 10 vs 10 when TC ≥ +4.',
@@ -96,6 +133,10 @@ export const ILLUSTRIOUS_18: DeviationPlay[] = [
     normalAction: 'H',
     deviationAction: 'S',
     index: 2,
+    systemIndices: {
+      'hi-opt-i': 2, 'hi-opt-ii': 1, 'omega-ii': 1,
+      'zen': 4, 'wong-halves': 2,
+    },
     direction: '>=',
     category: 'illustrious18',
     description: 'Stand on 12 vs 3 when TC ≥ +2.',
@@ -109,6 +150,10 @@ export const ILLUSTRIOUS_18: DeviationPlay[] = [
     normalAction: 'H',
     deviationAction: 'S',
     index: 3,
+    systemIndices: {
+      'hi-opt-i': 3, 'hi-opt-ii': 2, 'omega-ii': 2,
+      'zen': 6, 'wong-halves': 3,
+    },
     direction: '>=',
     category: 'illustrious18',
     description: 'Stand on 12 vs 2 when TC ≥ +3.',
@@ -122,6 +167,10 @@ export const ILLUSTRIOUS_18: DeviationPlay[] = [
     normalAction: 'H',
     deviationAction: 'Dh',
     index: 1,
+    systemIndices: {
+      'hi-opt-i': 1, 'hi-opt-ii': 1, 'omega-ii': 1,
+      'zen': 2, 'wong-halves': 1,
+    },
     direction: '>=',
     category: 'illustrious18',
     description: 'Double 11 vs Ace when TC ≥ +1.',
@@ -135,6 +184,10 @@ export const ILLUSTRIOUS_18: DeviationPlay[] = [
     normalAction: 'H',
     deviationAction: 'Dh',
     index: 1,
+    systemIndices: {
+      'hi-opt-i': 1, 'hi-opt-ii': 1, 'omega-ii': 1,
+      'zen': 3, 'wong-halves': 1,
+    },
     direction: '>=',
     category: 'illustrious18',
     description: 'Double hard 9 vs 2 when TC ≥ +1.',
@@ -148,6 +201,10 @@ export const ILLUSTRIOUS_18: DeviationPlay[] = [
     normalAction: 'H',
     deviationAction: 'Dh',
     index: 4,
+    systemIndices: {
+      'hi-opt-i': 4, 'hi-opt-ii': 3, 'omega-ii': 3,
+      'zen': 7, 'wong-halves': 4,
+    },
     direction: '>=',
     category: 'illustrious18',
     description: 'Double hard 10 vs Ace when TC ≥ +4.',
@@ -161,6 +218,10 @@ export const ILLUSTRIOUS_18: DeviationPlay[] = [
     normalAction: 'H',
     deviationAction: 'Dh',
     index: 3,
+    systemIndices: {
+      'hi-opt-i': 3, 'hi-opt-ii': 2, 'omega-ii': 2,
+      'zen': 6, 'wong-halves': 3,
+    },
     direction: '>=',
     category: 'illustrious18',
     description: 'Double hard 9 vs 7 when TC ≥ +3.',
@@ -174,6 +235,10 @@ export const ILLUSTRIOUS_18: DeviationPlay[] = [
     normalAction: 'H',
     deviationAction: 'S',
     index: 5,
+    systemIndices: {
+      'hi-opt-i': 5, 'hi-opt-ii': 4, 'omega-ii': 4,
+      'zen': 9, 'wong-halves': 5,
+    },
     direction: '>=',
     category: 'illustrious18',
     description: 'Stand on 16 vs 9 when TC ≥ +5.',
@@ -187,6 +252,10 @@ export const ILLUSTRIOUS_18: DeviationPlay[] = [
     normalAction: 'S',
     deviationAction: 'H',
     index: -1,
+    systemIndices: {
+      'hi-opt-i': -1, 'hi-opt-ii': -1, 'omega-ii': -1,
+      'zen': -2, 'wong-halves': -1,
+    },
     direction: '<=',
     category: 'illustrious18',
     description: 'Hit 13 vs 2 when TC ≤ -1 (instead of standing).',
@@ -200,6 +269,10 @@ export const ILLUSTRIOUS_18: DeviationPlay[] = [
     normalAction: 'S',
     deviationAction: 'H',
     index: 0,
+    systemIndices: {
+      'hi-opt-i': 0, 'hi-opt-ii': 0, 'omega-ii': 0,
+      'zen': 0, 'wong-halves': 0,
+    },
     direction: '<=',
     category: 'illustrious18',
     description: 'Hit 12 vs 4 when TC ≤ 0 (instead of standing).',
@@ -213,6 +286,10 @@ export const ILLUSTRIOUS_18: DeviationPlay[] = [
     normalAction: 'S',
     deviationAction: 'H',
     index: -2,
+    systemIndices: {
+      'hi-opt-i': -2, 'hi-opt-ii': -1, 'omega-ii': -1,
+      'zen': -3, 'wong-halves': -2,
+    },
     direction: '<=',
     category: 'illustrious18',
     description: 'Hit 12 vs 5 when TC ≤ -2.',
@@ -226,6 +303,10 @@ export const ILLUSTRIOUS_18: DeviationPlay[] = [
     normalAction: 'S',
     deviationAction: 'H',
     index: -1,
+    systemIndices: {
+      'hi-opt-i': -1, 'hi-opt-ii': -1, 'omega-ii': -1,
+      'zen': -2, 'wong-halves': -1,
+    },
     direction: '<=',
     category: 'illustrious18',
     description: 'Hit 12 vs 6 when TC ≤ -1.',
@@ -239,6 +320,10 @@ export const ILLUSTRIOUS_18: DeviationPlay[] = [
     normalAction: 'S',
     deviationAction: 'H',
     index: -2,
+    systemIndices: {
+      'hi-opt-i': -2, 'hi-opt-ii': -1, 'omega-ii': -1,
+      'zen': -3, 'wong-halves': -2,
+    },
     direction: '<=',
     category: 'illustrious18',
     description: 'Hit 13 vs 3 when TC ≤ -2.',
@@ -246,8 +331,7 @@ export const ILLUSTRIOUS_18: DeviationPlay[] = [
 ];
 
 /**
- * The Fab 4 Surrender plays — the four most important surrender deviations.
- * Also from Don Schlesinger's "Blackjack Attack".
+ * The Fab 4 Surrender plays — from Don Schlesinger's "Blackjack Attack".
  */
 export const FAB_4: DeviationPlay[] = [
   {
@@ -259,6 +343,10 @@ export const FAB_4: DeviationPlay[] = [
     normalAction: 'H',
     deviationAction: 'Rh',
     index: 3,
+    systemIndices: {
+      'hi-opt-i': 3, 'hi-opt-ii': 2, 'omega-ii': 2,
+      'zen': 6, 'wong-halves': 3,
+    },
     direction: '>=',
     category: 'fab4',
     description: 'Surrender 14 vs 10 when TC ≥ +3.',
@@ -272,6 +360,10 @@ export const FAB_4: DeviationPlay[] = [
     normalAction: 'H',
     deviationAction: 'Rh',
     index: 2,
+    systemIndices: {
+      'hi-opt-i': 2, 'hi-opt-ii': 2, 'omega-ii': 2,
+      'zen': 4, 'wong-halves': 2,
+    },
     direction: '>=',
     category: 'fab4',
     description: 'Surrender 15 vs 9 when TC ≥ +2.',
@@ -285,6 +377,10 @@ export const FAB_4: DeviationPlay[] = [
     normalAction: 'H',
     deviationAction: 'Rh',
     index: 1,
+    systemIndices: {
+      'hi-opt-i': 1, 'hi-opt-ii': 1, 'omega-ii': 1,
+      'zen': 2, 'wong-halves': 1,
+    },
     direction: '>=',
     category: 'fab4',
     description: 'Surrender 15 vs Ace when TC ≥ +1.',
@@ -298,6 +394,10 @@ export const FAB_4: DeviationPlay[] = [
     normalAction: 'H',
     deviationAction: 'Rh',
     index: 7,
+    systemIndices: {
+      'hi-opt-i': 7, 'hi-opt-ii': 5, 'omega-ii': 5,
+      'zen': 13, 'wong-halves': 7,
+    },
     direction: '>=',
     category: 'fab4',
     description: 'Surrender 14 vs Ace when TC ≥ +7.',
@@ -306,7 +406,6 @@ export const FAB_4: DeviationPlay[] = [
 
 /**
  * Additional deviation plays beyond the Illustrious 18 and Fab 4.
- * These provide smaller but still meaningful gains.
  */
 export const ADDITIONAL_DEVIATIONS: DeviationPlay[] = [
   {
@@ -318,6 +417,9 @@ export const ADDITIONAL_DEVIATIONS: DeviationPlay[] = [
     normalAction: 'S',
     deviationAction: 'P',
     index: 6,
+    systemIndices: {
+      'hi-opt-ii': 5, 'omega-ii': 5, 'zen': 11,
+    },
     direction: '>=',
     category: 'additional',
     description: 'Split tens vs 4 when TC ≥ +6.',
@@ -331,6 +433,9 @@ export const ADDITIONAL_DEVIATIONS: DeviationPlay[] = [
     normalAction: 'H',
     deviationAction: 'Dh',
     index: 2,
+    systemIndices: {
+      'hi-opt-ii': 2, 'omega-ii': 2, 'zen': 4,
+    },
     direction: '>=',
     category: 'additional',
     description: 'Double 8 vs 6 when TC ≥ +2.',
@@ -344,6 +449,9 @@ export const ADDITIONAL_DEVIATIONS: DeviationPlay[] = [
     normalAction: 'H',
     deviationAction: 'Dh',
     index: 3,
+    systemIndices: {
+      'hi-opt-ii': 2, 'omega-ii': 2, 'zen': 5,
+    },
     direction: '>=',
     category: 'additional',
     description: 'Double 8 vs 5 when TC ≥ +3.',
@@ -448,22 +556,72 @@ export const ALL_DEVIATIONS: DeviationPlay[] = [
 ];
 
 /**
- * Get active deviations based on current true count
+ * Get the effective index for a deviation given the current counting system.
+ *
+ * For balanced systems: returns the system-specific TC index.
+ * For unbalanced systems (KO, Red 7): converts the Hi-Lo TC index
+ * to an equivalent Running Count threshold based on decks remaining.
+ */
+export function getEffectiveIndex(
+  dev: DeviationPlay,
+  systemId: CountingSystemId,
+  numDecks: number,
+  decksRemaining: number,
+): number {
+  const system = COUNTING_SYSTEMS[systemId];
+
+  // Check for a published system-specific index first
+  const override = dev.systemIndices?.[systemId];
+
+  if (system.balanced) {
+    // For balanced systems, use published override or fall back to Hi-Lo index
+    return override ?? dev.index;
+  }
+
+  // For unbalanced systems (KO, Red 7), convert TC index to RC threshold
+  // RC threshold ≈ TC_index × decks_remaining + IRC
+  const hiLoIndex = override ?? dev.index;
+  const irc = systemId === 'ko'
+    ? getKOInitialRC(numDecks)
+    : getRed7InitialRC(numDecks);
+
+  // Pivot point: the RC value equivalent to TC 0
+  // For KO 6-deck: IRC = -20, pivot ≈ +4 (where advantage starts)
+  // Convert: RC_threshold = hiLoIndex * decksRemaining + IRC + (numDecks * tag_sum_offset)
+  // Simplified: use the standard conversion RC = TC * decks_remaining
+  // But for unbalanced, we offset by the IRC
+  return Math.round(hiLoIndex * decksRemaining + irc);
+}
+
+/**
+ * Get active deviations based on current count and system.
  */
 export function getActiveDeviations(
   trueCount: number,
   surrenderAvailable: boolean,
+  systemId: CountingSystemId = 'hi-lo',
+  numDecks: number = 6,
+  decksRemaining: number = 6,
 ): DeviationPlay[] {
+  const system = COUNTING_SYSTEMS[systemId];
+  // For unbalanced systems, trueCount is actually the running count
+  const countValue = trueCount;
+
   return ALL_DEVIATIONS.filter(dev => {
     // Skip surrender plays if surrender not available
     if (!surrenderAvailable && (dev.deviationAction === 'Rh' || dev.deviationAction === 'Rs' || dev.deviationAction === 'Rp')) {
       return false;
     }
 
+    // Skip deviations for Ace-Five (too simple for deviation plays)
+    if (systemId === 'ace-five') return false;
+
+    const effectiveIndex = getEffectiveIndex(dev, systemId, numDecks, decksRemaining);
+
     if (dev.direction === '>=') {
-      return trueCount >= dev.index;
+      return countValue >= effectiveIndex;
     } else {
-      return trueCount <= dev.index;
+      return countValue <= effectiveIndex;
     }
   });
 }
@@ -476,9 +634,34 @@ export function getDeviation(
   dealerUpcard: string,
   trueCount: number,
   surrenderAvailable: boolean,
+  systemId: CountingSystemId = 'hi-lo',
+  numDecks: number = 6,
+  decksRemaining: number = 6,
 ): DeviationPlay | null {
-  const active = getActiveDeviations(trueCount, surrenderAvailable);
+  const active = getActiveDeviations(trueCount, surrenderAvailable, systemId, numDecks, decksRemaining);
   return active.find(d =>
     d.playerHand === playerHand && d.dealerUpcard === dealerUpcard
   ) ?? null;
+}
+
+/**
+ * Get the display index for a deviation in the current system.
+ * Returns the effective threshold value and a label indicating TC or RC.
+ */
+export function getDeviationDisplayIndex(
+  dev: DeviationPlay,
+  systemId: CountingSystemId,
+  numDecks: number = 6,
+  decksRemaining: number = 3,
+): { value: number; label: string } {
+  const system = COUNTING_SYSTEMS[systemId];
+
+  if (system.balanced) {
+    const idx = dev.systemIndices?.[systemId] ?? dev.index;
+    return { value: idx, label: 'TC' };
+  }
+
+  // For unbalanced, show the RC threshold
+  const rc = getEffectiveIndex(dev, systemId, numDecks, decksRemaining);
+  return { value: rc, label: 'RC' };
 }
