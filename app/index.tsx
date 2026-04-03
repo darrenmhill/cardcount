@@ -9,6 +9,7 @@ import { COUNTING_SYSTEMS } from '../src/engine/countingSystems';
 import { getRecommendedBet } from '../src/engine/betting';
 import { getActiveDeviations } from '../src/engine/deviations';
 import { Card } from '../src/types';
+import { Tooltip } from '../src/components/Tooltip';
 
 const CARD_BUTTONS: { label: string; card: Card }[] = [
   { label: 'A', card: 'A' },
@@ -77,88 +78,140 @@ export default function CountScreen() {
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         {/* System badge */}
-        <View style={styles.systemBadge}>
-          <Text style={styles.systemName}>{system.name}</Text>
-          <Text style={styles.systemType}>
-            {system.balanced ? 'Balanced' : 'Unbalanced'} • Level {system.level}
-          </Text>
-        </View>
+        <Tooltip
+          title={system.name}
+          body={`${system.description}\n\n${system.balanced ? 'Balanced: the card values sum to zero for a full deck, so the running count must be converted to a true count by dividing by decks remaining.' : 'Unbalanced: the card values do NOT sum to zero, so you can use the running count directly without dividing by decks remaining — simpler to use.'}\n\nLevel ${system.level}: ${system.level === 1 ? 'single-value system (easiest to learn)' : system.level === 2 ? 'multi-value system (more accurate, harder to use)' : 'three-level system (highest accuracy, most difficult)'}.${system.sideCountAces ? ' This system requires a separate ace side count.' : ''}`}
+        >
+          <View style={styles.systemBadge}>
+            <Text style={styles.systemName}>{system.name}</Text>
+            <Text style={styles.systemType}>
+              {system.balanced ? 'Balanced' : 'Unbalanced'} • Level {system.level}
+            </Text>
+          </View>
+        </Tooltip>
 
         {/* Main count display */}
         <View style={styles.countContainer}>
-          <View style={styles.countMain}>
-            <Text style={styles.countLabel}>
-              {system.balanced ? 'TRUE COUNT' : 'RUNNING COUNT'}
-            </Text>
-            <Text style={[styles.countValue, { color: tcColor }]}>
-              {trueCount > 0 ? '+' : ''}{system.balanced ? trueCount.toFixed(1) : runningCount}
-            </Text>
-          </View>
-
-          {system.balanced && (
-            <View style={styles.rcDisplay}>
-              <Text style={styles.rcLabel}>RC</Text>
-              <Text style={styles.rcValue}>
-                {runningCount > 0 ? '+' : ''}{runningCount}
+          <Tooltip
+            title={system.balanced ? 'True Count (TC)' : 'Running Count (RC)'}
+            body={system.balanced
+              ? 'The True Count is the Running Count divided by the number of decks remaining. It normalizes the count across different shoe sizes and is used for betting and strategy decisions. A positive TC means more high cards remain (favorable to the player).'
+              : 'The Running Count is the cumulative total of card values seen so far. For unbalanced systems like KO and Red 7, the running count is used directly for decisions without converting to a true count.'}
+          >
+            <View style={styles.countMain}>
+              <Text style={styles.countLabel}>
+                {system.balanced ? 'TRUE COUNT' : 'RUNNING COUNT'}
+              </Text>
+              <Text style={[styles.countValue, { color: tcColor }]}>
+                {trueCount > 0 ? '+' : ''}{system.balanced ? trueCount.toFixed(1) : runningCount}
               </Text>
             </View>
+          </Tooltip>
+
+          {system.balanced && (
+            <Tooltip
+              title="Running Count (RC)"
+              body="The raw cumulative count before adjusting for remaining decks. Each card dealt adds or subtracts its system value. The RC is divided by decks remaining to get the True Count. Track this number mentally as cards are dealt."
+            >
+              <View style={styles.rcDisplay}>
+                <Text style={styles.rcLabel}>RC</Text>
+                <Text style={styles.rcValue}>
+                  {runningCount > 0 ? '+' : ''}{runningCount}
+                </Text>
+              </View>
+            </Tooltip>
           )}
         </View>
 
         {/* Stats row */}
         <View style={styles.statsRow}>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>{cardsDealt}</Text>
-            <Text style={styles.statLabel}>Dealt</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>{cardsRemaining}</Text>
-            <Text style={styles.statLabel}>Remaining</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>{decksRemaining.toFixed(1)}</Text>
-            <Text style={styles.statLabel}>Decks Left</Text>
-          </View>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>{penetrationPct}%</Text>
-            <Text style={styles.statLabel}>Penetration</Text>
-          </View>
+          <Tooltip
+            title="Cards Dealt"
+            body="The total number of cards that have been dealt from the shoe so far. Use this to estimate how deep into the shoe you are and how reliable the count is. Early counts are less reliable than counts deeper into the shoe."
+          >
+            <View style={styles.statBox}>
+              <Text style={styles.statValue}>{cardsDealt}</Text>
+              <Text style={styles.statLabel}>Dealt</Text>
+            </View>
+          </Tooltip>
+          <Tooltip
+            title="Cards Remaining"
+            body="The estimated number of undealt cards left in the shoe. This is calculated as (total cards in shoe) minus (cards dealt). Used internally to calculate decks remaining for the true count conversion."
+          >
+            <View style={styles.statBox}>
+              <Text style={styles.statValue}>{cardsRemaining}</Text>
+              <Text style={styles.statLabel}>Remaining</Text>
+            </View>
+          </Tooltip>
+          <Tooltip
+            title="Decks Remaining"
+            body="The estimated number of full decks left in the shoe. This is the key divisor for converting running count to true count: TC = RC / Decks Remaining. In a casino, estimate this by looking at the discard tray. Round to the nearest half-deck for mental math."
+          >
+            <View style={styles.statBox}>
+              <Text style={styles.statValue}>{decksRemaining.toFixed(1)}</Text>
+              <Text style={styles.statLabel}>Decks Left</Text>
+            </View>
+          </Tooltip>
+          <Tooltip
+            title="Deck Penetration"
+            body="The percentage of the shoe that has been dealt. Higher penetration (more cards dealt) gives the counter a bigger advantage because the count becomes more accurate. Most casinos deal 70-80% of a shoe. Below 60% penetration, card counting becomes much less effective."
+          >
+            <View style={styles.statBox}>
+              <Text style={styles.statValue}>{penetrationPct}%</Text>
+              <Text style={styles.statLabel}>Penetration</Text>
+            </View>
+          </Tooltip>
         </View>
 
         {/* Ace tracker (for side-count systems) */}
         {system.sideCountAces && (
-          <View style={styles.aceTracker}>
-            <Text style={styles.aceLabel}>Aces: {acesDealt}/{totalAces}</Text>
-            <Text style={styles.aceLabel}>
-              Remaining: {acesRemaining} (expect {(acesRemaining / decksRemaining).toFixed(1)}/deck)
-            </Text>
-          </View>
+          <Tooltip
+            title="Ace Side Count"
+            body={`Systems like ${system.name} assign Aces a value of 0, so they aren't tracked in the main count. But Aces are critical for blackjacks (which pay 3:2), so you need to track them separately.\n\nCompare aces remaining to what you'd expect: ${(totalAces / rules.numDecks).toFixed(0)} aces per deck. If fewer aces remain than expected, the shoe is ace-poor — reduce your bet slightly. If more remain, the shoe is ace-rich — increase your bet.`}
+          >
+            <View style={styles.aceTracker}>
+              <Text style={styles.aceLabel}>Aces: {acesDealt}/{totalAces}</Text>
+              <Text style={styles.aceLabel}>
+                Remaining: {acesRemaining} (expect {(acesRemaining / decksRemaining).toFixed(1)}/deck)
+              </Text>
+            </View>
+          </Tooltip>
         )}
 
         {/* Bet recommendation */}
-        <View style={[styles.betBox, { borderColor: tcColor }]}>
-          <Text style={styles.betLabel}>RECOMMENDED BET</Text>
-          <Text style={[styles.betUnits, { color: tcColor }]}>{bet.units} Unit{bet.units !== 1 ? 's' : ''}</Text>
-          <Text style={styles.betDesc}>{bet.description}</Text>
-        </View>
+        <Tooltip
+          title="Recommended Bet"
+          body={`The suggested bet size in units based on the current true count and a ${rules.numDecks <= 2 ? '1-8' : '1-12'} betting spread.\n\nA "unit" is your minimum bet amount (e.g., $10 or $25). When the count is negative or zero, bet the minimum (1 unit). As the count rises, increase your bet proportionally.\n\nThis spread balances profit potential against detection risk. Larger spreads earn more but attract more attention from casino surveillance. Never bet more than your bankroll can sustain.`}
+        >
+          <View style={[styles.betBox, { borderColor: tcColor }]}>
+            <Text style={styles.betLabel}>RECOMMENDED BET</Text>
+            <Text style={[styles.betUnits, { color: tcColor }]}>{bet.units} Unit{bet.units !== 1 ? 's' : ''}</Text>
+            <Text style={styles.betDesc}>{bet.description}</Text>
+          </View>
+        </Tooltip>
 
         {/* Active deviations alert */}
         {activeDevs.length > 0 && (
-          <View style={styles.deviationAlert}>
-            <Text style={styles.deviationTitle}>
-              ⚡ {activeDevs.length} Active Deviation{activeDevs.length !== 1 ? 's' : ''}
-            </Text>
-            {activeDevs.slice(0, 5).map(dev => (
-              <Text key={dev.id} style={styles.deviationItem}>
-                • {dev.name}
+          <Tooltip
+            title="Active Deviations"
+            body="Deviations (or index plays) are situations where the correct play differs from basic strategy because of the current count. These are based on the Illustrious 18 and Fab 4 — the most valuable deviations identified by Don Schlesinger. When a deviation is active, use the deviation action instead of basic strategy for that specific hand. Tap the Deviations tab for full details."
+          >
+            <View style={styles.deviationAlert}>
+              <Text style={styles.deviationTitle}>
+                {activeDevs.length} Active Deviation{activeDevs.length !== 1 ? 's' : ''}
               </Text>
-            ))}
-            {activeDevs.length > 5 && (
-              <Text style={styles.deviationMore}>
-                +{activeDevs.length - 5} more — see Deviations tab
-              </Text>
-            )}
-          </View>
+              {activeDevs.slice(0, 5).map(dev => (
+                <Text key={dev.id} style={styles.deviationItem}>
+                  {dev.name}
+                </Text>
+              ))}
+              {activeDevs.length > 5 && (
+                <Text style={styles.deviationMore}>
+                  +{activeDevs.length - 5} more — see Deviations tab
+                </Text>
+              )}
+            </View>
+          </Tooltip>
         )}
       </ScrollView>
 
