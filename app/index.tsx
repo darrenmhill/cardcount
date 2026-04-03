@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, Platform,
 } from 'react-native';
@@ -58,6 +58,23 @@ export default function CountScreen() {
         { text: 'Reset', style: 'destructive', onPress: resetShoe },
       ]);
     }
+  };
+
+  // Count how many of each card value have been dealt
+  // 10, J, Q, K are separate cards but share the "10-value" in counting;
+  // however each rank has numDecks*4 copies in the shoe
+  const dealtCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const c of shoeHistory) {
+      counts[c] = (counts[c] || 0) + 1;
+    }
+    return counts;
+  }, [shoeHistory]);
+
+  const getMaxForCard = (card: Card): number => rules.numDecks * 4;
+
+  const getRemainingForCard = (card: Card): number => {
+    return getMaxForCard(card) - (dealtCounts[card] || 0);
   };
 
   const getCardCountValue = (card: Card): string => {
@@ -224,36 +241,39 @@ export default function CountScreen() {
 
       {/* Card buttons */}
       <View style={styles.cardGrid}>
-        <View style={styles.cardRow}>
-          {CARD_BUTTONS.slice(0, 7).map(({ label, card }) => (
-            <TouchableOpacity
-              key={label}
-              style={[styles.cardButton, { borderColor: getCardColor(card) }]}
-              onPress={() => dealCard(card)}
-              activeOpacity={0.6}
-            >
-              <Text style={[styles.cardLabel, { color: getCardColor(card) }]}>{label}</Text>
-              <Text style={[styles.cardCount, { color: getCardColor(card) }]}>
-                {getCardCountValue(card)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        <View style={styles.cardRow}>
-          {CARD_BUTTONS.slice(7).map(({ label, card }) => (
-            <TouchableOpacity
-              key={label}
-              style={[styles.cardButton, { borderColor: getCardColor(card) }]}
-              onPress={() => dealCard(card)}
-              activeOpacity={0.6}
-            >
-              <Text style={[styles.cardLabel, { color: getCardColor(card) }]}>{label}</Text>
-              <Text style={[styles.cardCount, { color: getCardColor(card) }]}>
-                {getCardCountValue(card)}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {[CARD_BUTTONS.slice(0, 7), CARD_BUTTONS.slice(7)].map((row, ri) => (
+          <View key={ri} style={styles.cardRow}>
+            {row.map(({ label, card }) => {
+              const remaining = getRemainingForCard(card);
+              const exhausted = remaining <= 0;
+              return (
+                <TouchableOpacity
+                  key={label}
+                  style={[
+                    styles.cardButton,
+                    { borderColor: exhausted ? Colors.border : getCardColor(card) },
+                    exhausted && styles.cardButtonExhausted,
+                  ]}
+                  onPress={() => dealCard(card)}
+                  activeOpacity={0.6}
+                  disabled={exhausted}
+                >
+                  <Text style={[
+                    styles.cardLabel,
+                    { color: exhausted ? Colors.textDim : getCardColor(card) },
+                    exhausted && styles.cardLabelExhausted,
+                  ]}>{label}</Text>
+                  <Text style={[
+                    styles.cardRemaining,
+                    { color: exhausted ? Colors.textDim : Colors.textSecondary },
+                  ]}>
+                    {remaining}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ))}
 
         {/* Action buttons */}
         <View style={styles.actionRow}>
@@ -448,12 +468,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginHorizontal: 3,
   },
+  cardButtonExhausted: {
+    opacity: 0.3,
+    backgroundColor: Colors.card,
+  },
   cardLabel: {
     fontSize: FontSize.lg,
     fontWeight: '800',
   },
-  cardCount: {
-    fontSize: FontSize.xs,
+  cardLabelExhausted: {
+    textDecorationLine: 'line-through',
+  },
+  cardRemaining: {
+    fontSize: 9,
     fontWeight: '600',
     marginTop: 1,
   },
