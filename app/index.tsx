@@ -8,11 +8,15 @@ import { Colors, Spacing, FontSize } from '../src/constants/theme';
 import { COUNTING_SYSTEMS } from '../src/engine/countingSystems';
 import { getRecommendedBet } from '../src/engine/betting';
 import { getActiveDeviations } from '../src/engine/deviations';
+import { calculateBaseHouseEdge, estimatePlayerEdge } from '../src/engine/countingSystems';
 import { Card } from '../src/types';
 import { Tooltip } from '../src/components/Tooltip';
 import { ConfirmModal } from '../src/components/ConfirmModal';
+import { ShoeProgress } from '../src/components/ShoeProgress';
 
-const CARD_BUTTONS: { label: string; card: Card }[] = [
+interface CardButton { label: string; card: Card; countOverride?: number; color?: string }
+
+const CARD_BUTTONS: CardButton[] = [
   { label: 'A', card: 'A' },
   { label: '2', card: '2' },
   { label: '3', card: '3' },
@@ -20,6 +24,24 @@ const CARD_BUTTONS: { label: string; card: Card }[] = [
   { label: '5', card: '5' },
   { label: '6', card: '6' },
   { label: '7', card: '7' },
+  { label: '8', card: '8' },
+  { label: '9', card: '9' },
+  { label: '10', card: '10' },
+  { label: 'J', card: 'J' },
+  { label: 'Q', card: 'Q' },
+  { label: 'K', card: 'K' },
+];
+
+// Red 7 system: split 7 into red (+1) and black (0)
+const RED7_CARD_BUTTONS: CardButton[] = [
+  { label: 'A', card: 'A' },
+  { label: '2', card: '2' },
+  { label: '3', card: '3' },
+  { label: '4', card: '4' },
+  { label: '5', card: '5' },
+  { label: '6', card: '6' },
+  { label: '7', card: '7', countOverride: 1, color: '#ef4444' },   // Red 7
+  { label: '7', card: '7', countOverride: 0, color: Colors.textDim }, // Black 7
   { label: '8', card: '8' },
   { label: '9', card: '9' },
   { label: '10', card: '10' },
@@ -39,6 +61,8 @@ export default function CountScreen() {
   const cardsRemaining = totalCards - cardsDealt;
   const penetrationPct = ((cardsDealt / totalCards) * 100).toFixed(0);
   const bet = getRecommendedBet(Math.floor(trueCount), rules.numDecks);
+  const baseEdge = calculateBaseHouseEdge(rules);
+  const playerEdge = estimatePlayerEdge(trueCount, baseEdge);
   const activeDevs = cardsDealt > 0
     ? getActiveDeviations(trueCount, rules.surrenderAvailable !== 'none', systemId, rules.numDecks, decksRemaining)
     : [];
@@ -103,6 +127,13 @@ export default function CountScreen() {
             </Text>
           </View>
         </Tooltip>
+
+        {/* Shoe progress */}
+        <ShoeProgress
+          cardsDealt={cardsDealt}
+          totalCards={totalCards}
+          penetration={rules.penetration}
+        />
 
         {/* Main count display */}
         <View style={styles.countContainer}>
@@ -188,10 +219,30 @@ export default function CountScreen() {
             body={`Systems like ${system.name} assign Aces a value of 0, so they aren't tracked in the main count. But Aces are critical for blackjacks (which pay 3:2), so you need to track them separately.\n\nCompare aces remaining to what you'd expect: ${(totalAces / rules.numDecks).toFixed(0)} aces per deck. If fewer aces remain than expected, the shoe is ace-poor — reduce your bet slightly. If more remain, the shoe is ace-rich — increase your bet.`}
           >
             <View style={styles.aceTracker}>
-              <Text style={styles.aceLabel}>Aces: {acesDealt}/{totalAces}</Text>
-              <Text style={styles.aceLabel}>
-                Remaining: {acesRemaining} (expect {(acesRemaining / decksRemaining).toFixed(1)}/deck)
-              </Text>
+              {(() => {
+                const acesPerDeck = decksRemaining > 0 ? acesRemaining / decksRemaining : 0;
+                const aceColor = acesPerDeck < 3.5 ? Colors.danger
+                  : acesPerDeck > 4.5 ? Colors.positive
+                  : Colors.textSecondary;
+                const aceStatus = acesPerDeck < 3.5 ? 'ACE-POOR'
+                  : acesPerDeck > 4.5 ? 'ACE-RICH'
+                  : '';
+                return (
+                  <>
+                    <View style={styles.aceRow}>
+                      <Text style={styles.aceLabel}>Aces: {acesDealt}/{totalAces} dealt</Text>
+                      {aceStatus !== '' && (
+                        <View style={[styles.aceBadge, { backgroundColor: aceColor + '20', borderColor: aceColor }]}>
+                          <Text style={[styles.aceBadgeText, { color: aceColor }]}>{aceStatus}</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={[styles.aceLabel, { color: aceColor }]}>
+                      {acesRemaining} remaining ({acesPerDeck.toFixed(1)}/deck — expect 4.0)
+                    </Text>
+                  </>
+                );
+              })()}
             </View>
           </Tooltip>
         )}
@@ -206,6 +257,13 @@ export default function CountScreen() {
             <View style={{ flex: 1 }}>
               <Text style={styles.betLabel}>BET</Text>
               <Text style={styles.betDesc}>{bet.description}</Text>
+            </View>
+            <View style={styles.edgePill}>
+              <Text style={[styles.edgePillText, {
+                color: playerEdge > 0 ? Colors.positive : playerEdge < -1 ? Colors.danger : Colors.textDim,
+              }]}>
+                {playerEdge > 0 ? '+' : ''}{playerEdge.toFixed(1)}%
+              </Text>
             </View>
           </View>
         </Tooltip>
@@ -237,39 +295,52 @@ export default function CountScreen() {
 
       {/* Card buttons */}
       <View style={styles.cardGrid}>
-        {[CARD_BUTTONS.slice(0, 7), CARD_BUTTONS.slice(7)].map((row, ri) => (
-          <View key={ri} style={styles.cardRow}>
-            {row.map(({ label, card }) => {
-              const remaining = getRemainingForCard(card);
-              const exhausted = remaining <= 0;
-              return (
-                <TouchableOpacity
-                  key={label}
-                  style={[
-                    styles.cardButton,
-                    { borderColor: exhausted ? Colors.border : getCardColor(card) },
-                    exhausted && styles.cardButtonExhausted,
-                  ]}
-                  onPress={() => dealCard(card)}
-                  activeOpacity={0.6}
-                  disabled={exhausted}
-                >
-                  <Text style={[
-                    styles.cardLabel,
-                    { color: exhausted ? Colors.textDim : getCardColor(card) },
-                    exhausted && styles.cardLabelExhausted,
-                  ]}>{label}</Text>
-                  <Text style={[
-                    styles.cardRemaining,
-                    { color: exhausted ? Colors.textDim : Colors.textSecondary },
-                  ]}>
-                    {remaining}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        ))}
+        {(() => {
+          const buttons = systemId === 'red-7' ? RED7_CARD_BUTTONS : CARD_BUTTONS;
+          const mid = Math.ceil(buttons.length / 2);
+          return [buttons.slice(0, mid), buttons.slice(mid)].map((row, ri) => (
+            <View key={ri} style={styles.cardRow}>
+              {row.map(({ label, card, countOverride, color }, ci) => {
+                const remaining = getRemainingForCard(card);
+                // For Red 7 split buttons, each color has half the 7s
+                const effectiveRemaining = (countOverride !== undefined && card === '7')
+                  ? Math.ceil(remaining / 2)
+                  : remaining;
+                const exhausted = effectiveRemaining <= 0;
+                const btnColor = color || (exhausted ? Colors.textDim : getCardColor(card));
+                const isRed7Btn = countOverride !== undefined;
+                return (
+                  <TouchableOpacity
+                    key={`${label}-${ci}`}
+                    style={[
+                      styles.cardButton,
+                      { borderColor: exhausted ? Colors.border : btnColor },
+                      exhausted && styles.cardButtonExhausted,
+                    ]}
+                    onPress={() => dealCard(card, countOverride)}
+                    activeOpacity={0.6}
+                    disabled={exhausted}
+                  >
+                    <Text style={[
+                      styles.cardLabel,
+                      { color: exhausted ? Colors.textDim : btnColor },
+                      exhausted && styles.cardLabelExhausted,
+                      isRed7Btn && { fontSize: 14 },
+                    ]}>
+                      {isRed7Btn ? (countOverride === 1 ? '7R' : '7B') : label}
+                    </Text>
+                    <Text style={[
+                      styles.cardRemaining,
+                      { color: exhausted ? Colors.textDim : Colors.textSecondary },
+                    ]}>
+                      {effectiveRemaining}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ));
+        })()}
 
         {/* Action buttons */}
         <View style={styles.actionRow}>
@@ -407,9 +478,25 @@ const styles = StyleSheet.create({
     borderLeftWidth: 3,
     borderLeftColor: Colors.secondary,
   },
+  aceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 2,
+  },
   aceLabel: {
     color: Colors.textSecondary,
     fontSize: FontSize.sm,
+  },
+  aceBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+    borderWidth: 1,
+  },
+  aceBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
   },
   betBox: {
     backgroundColor: Colors.surface,
@@ -436,6 +523,18 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontSize: FontSize.xs,
     flex: 1,
+  },
+  edgePill: {
+    backgroundColor: Colors.card,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginLeft: Spacing.sm,
+  },
+  edgePillText: {
+    fontSize: FontSize.sm,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
   },
   deviationAlert: {
     backgroundColor: Colors.surfaceLight,

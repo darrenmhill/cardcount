@@ -133,12 +133,14 @@ export function calculateTrueCount(
   system: CountingSystem,
 ): number {
   if (!system.balanced) {
-    // For unbalanced systems (KO, Red 7), return running count
-    // adjusted by initial running count offset
     return runningCount;
   }
-  if (decksRemaining <= 0) return runningCount;
-  return runningCount / decksRemaining;
+  // When very few cards remain, TC becomes unreliable — clamp to ±15
+  if (decksRemaining < 0.25) {
+    return Math.max(-15, Math.min(15, runningCount * 4));
+  }
+  const tc = runningCount / decksRemaining;
+  return Math.max(-15, Math.min(15, tc));
 }
 
 export function getDecksRemaining(

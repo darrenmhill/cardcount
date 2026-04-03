@@ -23,7 +23,7 @@ interface CardCountState {
   decksRemaining: number;
 
   // Actions
-  dealCard: (card: Card) => void;
+  dealCard: (card: Card, countOverride?: number) => void;
   undoLastCard: () => void;
   resetShoe: () => void;
 
@@ -98,10 +98,10 @@ export const useStore = create<CardCountState>((set, get) => ({
     get().saveSettings();
   },
 
-  dealCard: (card) => {
+  dealCard: (card, countOverride) => {
     const state = get();
     const system = COUNTING_SYSTEMS[state.systemId];
-    const value = system.values[card];
+    const value = countOverride !== undefined ? countOverride : system.values[card];
     const newRC = state.runningCount + value;
     const newCardsDealt = state.cardsDealt + 1;
     const totalCards = state.rules.numDecks * 52;
