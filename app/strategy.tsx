@@ -121,61 +121,59 @@ export default function StrategyScreen() {
         </View>
 
         {/* Matrix */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View>
-            {/* Header row */}
-            <View style={styles.row}>
-              <View style={[styles.cell, styles.headerCell, styles.rowHeader]}>
-                <Text style={styles.headerText}>
-                  {activeTab === 'pair' ? 'Pair' : activeTab === 'soft' ? 'Hand' : 'Total'}
-                </Text>
-              </View>
-              {DEALER_CARDS.map(dc => (
-                <View key={dc} style={[styles.cell, styles.headerCell]}>
-                  <Text style={styles.headerText}>{dc}</Text>
-                </View>
-              ))}
+        <View style={styles.matrix}>
+          {/* Header row */}
+          <View style={styles.row}>
+            <View style={[styles.cell, styles.headerCell, styles.rowHeader]}>
+              <Text style={styles.headerText}>
+                {activeTab === 'pair' ? 'Pair' : activeTab === 'soft' ? 'Hand' : 'Total'}
+              </Text>
             </View>
-
-            {/* Data rows */}
-            {rows.map(row => (
-              <View key={row} style={styles.row}>
-                <View style={[styles.cell, styles.rowHeader]}>
-                  <Text style={styles.rowHeaderText}>{row}</Text>
-                </View>
-                {DEALER_CARDS.map(dc => {
-                  const { action, deviation } = getCell(row, dc);
-                  const isDeviated = deviation !== null;
-                  return (
-                    <TouchableOpacity
-                      key={dc}
-                      style={[
-                        styles.cell,
-                        { backgroundColor: getActionColor(action) + '30' },
-                        isDeviated && styles.deviatedCell,
-                      ]}
-                      activeOpacity={0.7}
-                      onPress={() => setSelectedCell({
-                        row, dc,
-                        base: baseMatrix[row]?.[dc] || 'H' as Action,
-                        dev: deviation,
-                      })}
-                    >
-                      <Text style={[
-                        styles.cellText,
-                        { color: getActionColor(action) },
-                        isDeviated && styles.deviatedCellText,
-                      ]}>
-                        {action}
-                      </Text>
-                      {isDeviated && <View style={styles.deviatedMarker} />}
-                    </TouchableOpacity>
-                  );
-                })}
+            {DEALER_CARDS.map(dc => (
+              <View key={dc} style={[styles.cell, styles.headerCell]}>
+                <Text style={styles.headerText}>{dc}</Text>
               </View>
             ))}
           </View>
-        </ScrollView>
+
+          {/* Data rows */}
+          {rows.map(row => (
+            <View key={row} style={styles.row}>
+              <View style={[styles.cell, styles.rowHeader]}>
+                <Text style={styles.rowHeaderText}>{row}</Text>
+              </View>
+              {DEALER_CARDS.map(dc => {
+                const { action, deviation } = getCell(row, dc);
+                const isDeviated = deviation !== null;
+                return (
+                  <TouchableOpacity
+                    key={dc}
+                    style={[
+                      styles.cell,
+                      { backgroundColor: getActionColor(action) + '30' },
+                      isDeviated && styles.deviatedCell,
+                    ]}
+                    activeOpacity={0.7}
+                    onPress={() => setSelectedCell({
+                      row, dc,
+                      base: baseMatrix[row]?.[dc] || 'H' as Action,
+                      dev: deviation,
+                    })}
+                  >
+                    <Text style={[
+                      styles.cellText,
+                      { color: getActionColor(action) },
+                      isDeviated && styles.deviatedCellText,
+                    ]}>
+                      {action}
+                    </Text>
+                    {isDeviated && <View style={styles.deviatedMarker} />}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          ))}
+        </View>
 
         {/* Mode description */}
         <View style={styles.modeInfo}>
@@ -389,7 +387,8 @@ const styles = StyleSheet.create({
   },
   scroll: {
     flex: 1,
-    padding: Spacing.md,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.md,
   },
   legend: {
     flexDirection: 'row',
@@ -417,12 +416,15 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontSize: FontSize.sm,
   },
+  matrix: {
+    width: '100%',
+  },
   row: {
     flexDirection: 'row',
   },
   cell: {
-    width: 38,
-    height: 36,
+    flex: 1,
+    height: 34,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 0.5,
@@ -431,24 +433,25 @@ const styles = StyleSheet.create({
   },
   headerCell: {
     backgroundColor: Colors.surfaceLight,
-    height: 32,
+    height: 30,
   },
   rowHeader: {
-    width: 42,
+    flex: 0,
+    width: 36,
     backgroundColor: Colors.surfaceLight,
   },
   headerText: {
     color: Colors.textSecondary,
-    fontSize: FontSize.xs,
+    fontSize: 10,
     fontWeight: '700',
   },
   rowHeaderText: {
     color: Colors.text,
-    fontSize: FontSize.sm,
+    fontSize: 11,
     fontWeight: '700',
   },
   cellText: {
-    fontSize: FontSize.sm,
+    fontSize: 11,
     fontWeight: '700',
   },
   deviatedCell: {
