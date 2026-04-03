@@ -1,18 +1,48 @@
 import { useEffect } from 'react';
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 import { useStore } from '../src/store/useStore';
 import { Colors } from '../src/constants/theme';
+import { getActiveDeviations } from '../src/engine/deviations';
 
-function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
+function TabIcon({ emoji, focused, badge }: { emoji: string; focused: boolean; badge?: number }) {
   return (
-    <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>{emoji}</Text>
+    <View style={{ position: 'relative' }}>
+      <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>{emoji}</Text>
+      {badge != null && badge > 0 && (
+        <View style={{
+          position: 'absolute',
+          top: -4,
+          right: -10,
+          backgroundColor: Colors.accent,
+          borderRadius: 8,
+          minWidth: 16,
+          height: 16,
+          alignItems: 'center',
+          justifyContent: 'center',
+          paddingHorizontal: 3,
+        }}>
+          <Text style={{
+            color: Colors.background,
+            fontSize: 9,
+            fontWeight: '800',
+          }}>{badge}</Text>
+        </View>
+      )}
+    </View>
   );
 }
 
 export default function Layout() {
   const loadSettings = useStore(s => s.loadSettings);
+  const trueCount = useStore(s => s.trueCount);
+  const cardsDealt = useStore(s => s.cardsDealt);
+  const surrenderAvailable = useStore(s => s.rules.surrenderAvailable);
+
+  const activeDevCount = cardsDealt > 0
+    ? getActiveDeviations(trueCount, surrenderAvailable !== 'none').length
+    : 0;
 
   useEffect(() => {
     loadSettings();
@@ -60,7 +90,7 @@ export default function Layout() {
           options={{
             title: 'Deviations',
             headerTitle: 'Index Plays',
-            tabBarIcon: ({ focused }) => <TabIcon emoji="⚡" focused={focused} />,
+            tabBarIcon: ({ focused }) => <TabIcon emoji="⚡" focused={focused} badge={activeDevCount} />,
           }}
         />
         <Tabs.Screen
