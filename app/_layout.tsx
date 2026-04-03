@@ -69,7 +69,7 @@ export default function Layout() {
           },
           tabBarActiveTintColor: Colors.primary,
           tabBarInactiveTintColor: Colors.textDim,
-          tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
+          tabBarLabelStyle: { fontSize: 9, fontWeight: '600' },
         }}
       >
         <Tabs.Screen
@@ -112,9 +112,16 @@ export default function Layout() {
             tabBarIcon: ({ focused }) => <TabIcon emoji="⚙️" focused={focused} />,
           }}
         />
-        {/* Hidden screens - still accessible but not in tab bar */}
+        <Tabs.Screen
+          name="betting"
+          options={{
+            title: 'Betting',
+            headerTitle: 'Bet Spread',
+            tabBarIcon: ({ focused }) => <TabIcon emoji="💰" focused={focused} />,
+          }}
+        />
+        {/* Hidden - merged into Strategy tab */}
         <Tabs.Screen name="deviations" options={{ href: null }} />
-        <Tabs.Screen name="betting" options={{ href: null }} />
       </Tabs>
     </>
   );
