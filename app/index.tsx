@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView, Platform,
+  View, Text, TouchableOpacity, StyleSheet, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../src/store/useStore';
@@ -10,6 +10,7 @@ import { getRecommendedBet } from '../src/engine/betting';
 import { getActiveDeviations } from '../src/engine/deviations';
 import { Card } from '../src/types';
 import { Tooltip } from '../src/components/Tooltip';
+import { ConfirmModal } from '../src/components/ConfirmModal';
 
 const CARD_BUTTONS: { label: string; card: Card }[] = [
   { label: 'A', card: 'A' },
@@ -47,17 +48,7 @@ export default function CountScreen() {
   const totalAces = rules.numDecks * 4;
   const acesRemaining = totalAces - acesDealt;
 
-  const handleReset = () => {
-    if (Platform.OS === 'web') {
-      if (confirm('Reset the count for a new shoe?')) resetShoe();
-    } else {
-      const { Alert } = require('react-native');
-      Alert.alert('New Shoe', 'Reset the count for a new shoe?', [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Reset', style: 'destructive', onPress: resetShoe },
-      ]);
-    }
-  };
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // Count how many of each card value have been dealt
   // 10, J, Q, K are separate cards but share the "10-value" in counting;
@@ -287,12 +278,26 @@ export default function CountScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.actionButton, styles.resetButton]}
-            onPress={handleReset}
+            onPress={() => setShowResetConfirm(true)}
           >
             <Text style={styles.actionText}>New Shoe</Text>
           </TouchableOpacity>
         </View>
       </View>
+
+      <ConfirmModal
+        visible={showResetConfirm}
+        title="New Shoe"
+        message="Reset the count for a new shoe? All card history will be cleared."
+        confirmLabel="Reset"
+        cancelLabel="Cancel"
+        destructive
+        onConfirm={() => {
+          resetShoe();
+          setShowResetConfirm(false);
+        }}
+        onCancel={() => setShowResetConfirm(false)}
+      />
     </SafeAreaView>
   );
 }
