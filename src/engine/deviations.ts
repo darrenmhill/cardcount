@@ -15,12 +15,12 @@ export const ILLUSTRIOUS_18: DeviationPlay[] = [
     handType: 'hard',
     playerHand: 'any',
     dealerUpcard: 'A',
-    normalAction: 'H', // normally don't take insurance
+    normalAction: 'H', // decline insurance
     deviationAction: 'S', // take insurance
     index: 3,
     direction: '>=',
     category: 'illustrious18',
-    description: 'Take insurance when TC ≥ +3. This is the single most valuable index play.',
+    description: 'Take insurance when TC ≥ +3. Normally always decline insurance — it becomes +EV only at high counts. This is the single most valuable index play.',
   },
   {
     id: 'i18-2',

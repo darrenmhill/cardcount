@@ -64,7 +64,7 @@ export function kellyBet(
   unitSize: number,
 ): number {
   const baseEdge = calculateBaseHouseEdge(rules);
-  const playerEdge = (-baseEdge + (trueCount - 1) * 0.5) / 100;
+  const playerEdge = (-baseEdge + trueCount * 0.5) / 100;
 
   if (playerEdge <= 0) return unitSize; // minimum bet
 

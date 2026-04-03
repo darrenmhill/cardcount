@@ -177,7 +177,7 @@ export function estimatePlayerEdge(
   trueCount: number,
   baseHouseEdge: number,
 ): number {
-  return -baseHouseEdge + (trueCount - 1) * 0.5;
+  return -baseHouseEdge + trueCount * 0.5;
 }
 
 /**

@@ -7,12 +7,13 @@ import { useStore } from '../src/store/useStore';
 import { Colors, Spacing, FontSize } from '../src/constants/theme';
 import { ILLUSTRIOUS_18, FAB_4, ADDITIONAL_DEVIATIONS, getActiveDeviations } from '../src/engine/deviations';
 import { getActionColor } from '../src/engine/basicStrategy';
+import { COUNTING_SYSTEMS } from '../src/engine/countingSystems';
 import { DeviationPlay } from '../src/types';
 
 type Filter = 'all' | 'active' | 'illustrious18' | 'fab4' | 'additional';
 
 export default function DeviationsScreen() {
-  const { trueCount, rules, cardsDealt } = useStore();
+  const { trueCount, rules, cardsDealt, systemId } = useStore();
   const [filter, setFilter] = useState<Filter>('all');
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -53,6 +54,11 @@ export default function DeviationsScreen() {
         <Text style={styles.tcActive}>
           {activeDevs.length} active deviation{activeDevs.length !== 1 ? 's' : ''}
         </Text>
+        {systemId !== 'hi-lo' && (
+          <Text style={styles.tcNote}>
+            Indices are calibrated for Hi-Lo. Values are approximate for {COUNTING_SYSTEMS[systemId].name}.
+          </Text>
+        )}
       </View>
 
       {/* Filter tabs */}
@@ -115,14 +121,14 @@ export default function DeviationsScreen() {
                   <View style={styles.actionChip}>
                     <Text style={styles.actionChipLabel}>Normal: </Text>
                     <Text style={[styles.actionChipValue, { color: getActionColor(dev.normalAction) }]}>
-                      {dev.normalAction}
+                      {dev.playerHand === 'any' ? 'Decline' : dev.normalAction}
                     </Text>
                   </View>
                   <Text style={styles.arrow}>→</Text>
                   <View style={[styles.actionChip, styles.actionChipDeviation]}>
                     <Text style={styles.actionChipLabel}>Deviate: </Text>
                     <Text style={[styles.actionChipValue, { color: getActionColor(dev.deviationAction) }]}>
-                      {dev.deviationAction}
+                      {dev.playerHand === 'any' ? 'Take' : dev.deviationAction}
                     </Text>
                   </View>
                 </View>
@@ -178,6 +184,12 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontWeight: '600',
     marginTop: 2,
+  },
+  tcNote: {
+    color: Colors.textDim,
+    fontSize: FontSize.xs,
+    fontStyle: 'italic',
+    marginTop: 4,
   },
   filterBar: {
     backgroundColor: Colors.surface,
