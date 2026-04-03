@@ -107,9 +107,9 @@ export default function Layout() {
         <Tabs.Screen
           name="other"
           options={{
-            title: 'More',
-            headerTitle: 'Tools',
-            tabBarIcon: ({ focused }) => <TabIcon emoji="🔧" focused={focused} />,
+            title: 'Training',
+            headerTitle: 'Training',
+            tabBarIcon: ({ focused }) => <TabIcon emoji="🎯" focused={focused} />,
           }}
         />
         <Tabs.Screen
