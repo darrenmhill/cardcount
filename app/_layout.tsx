@@ -9,7 +9,7 @@ import { getActiveDeviations } from '../src/engine/deviations';
 function TabIcon({ emoji, focused, badge }: { emoji: string; focused: boolean; badge?: number }) {
   return (
     <View style={{ position: 'relative' }}>
-      <Text style={{ fontSize: 18, opacity: focused ? 1 : 0.5 }}>{emoji}</Text>
+      <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>{emoji}</Text>
       {badge != null && badge > 0 && (
         <View style={{
           position: 'absolute',
@@ -69,7 +69,7 @@ export default function Layout() {
           },
           tabBarActiveTintColor: Colors.primary,
           tabBarInactiveTintColor: Colors.textDim,
-          tabBarLabelStyle: { fontSize: 9, fontWeight: '600' },
+          tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
         }}
       >
         <Tabs.Screen
@@ -84,32 +84,16 @@ export default function Layout() {
           name="strategy"
           options={{
             title: 'Strategy',
-            headerTitle: 'Strategy',
+            headerTitle: 'Basic Strategy',
             tabBarIcon: ({ focused }) => <TabIcon emoji="📊" focused={focused} />,
           }}
         />
         <Tabs.Screen
-          name="train"
+          name="deviations"
           options={{
-            title: 'Train',
-            headerTitle: 'Training',
-            tabBarIcon: ({ focused }) => <TabIcon emoji="🎯" focused={focused} />,
-          }}
-        />
-        <Tabs.Screen
-          name="sessions"
-          options={{
-            title: 'Sessions',
-            headerTitle: 'Sessions & Tools',
-            tabBarIcon: ({ focused }) => <TabIcon emoji="📈" focused={focused} />,
-          }}
-        />
-        <Tabs.Screen
-          name="settings"
-          options={{
-            title: 'Settings',
-            headerTitle: 'Game Settings',
-            tabBarIcon: ({ focused }) => <TabIcon emoji="⚙️" focused={focused} />,
+            title: 'Deviations',
+            headerTitle: 'Index Plays',
+            tabBarIcon: ({ focused }) => <TabIcon emoji="⚡" focused={focused} badge={activeDevCount} />,
           }}
         />
         <Tabs.Screen
@@ -121,13 +105,24 @@ export default function Layout() {
           }}
         />
         <Tabs.Screen
-          name="deviations"
+          name="other"
           options={{
-            title: 'Deviations',
-            headerTitle: 'Index Plays',
-            tabBarIcon: ({ focused }) => <TabIcon emoji="⚡" focused={focused} badge={activeDevCount} />,
+            title: 'More',
+            headerTitle: 'Tools',
+            tabBarIcon: ({ focused }) => <TabIcon emoji="🔧" focused={focused} />,
           }}
         />
+        <Tabs.Screen
+          name="settings"
+          options={{
+            title: 'Settings',
+            headerTitle: 'Game Settings',
+            tabBarIcon: ({ focused }) => <TabIcon emoji="⚙️" focused={focused} />,
+          }}
+        />
+        {/* Hidden - accessed via Other tab */}
+        <Tabs.Screen name="train" options={{ href: null }} />
+        <Tabs.Screen name="sessions" options={{ href: null }} />
       </Tabs>
     </>
   );

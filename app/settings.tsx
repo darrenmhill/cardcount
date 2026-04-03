@@ -1,12 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch,
+  View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../src/store/useStore';
 import { Colors, Spacing, FontSize } from '../src/constants/theme';
 import { COUNTING_SYSTEMS } from '../src/engine/countingSystems';
 import { CountingSystemId, GameRules } from '../src/types';
+import { saveDrillResults, saveSessions } from '../src/store/sessions';
+import { ConfirmModal } from '../src/components/ConfirmModal';
 
 const SYSTEM_IDS: CountingSystemId[] = [
   'hi-lo', 'hi-opt-i', 'hi-opt-ii', 'omega-ii', 'zen',
@@ -217,6 +219,7 @@ const PRESET_GROUPS = ['North America', 'United Kingdom', 'Europe', 'Asia-Pacifi
 export default function SettingsScreen() {
   const { systemId, setSystem, rules, updateRules } = useStore();
   const [showSystemDetail, setShowSystemDetail] = useState<CountingSystemId | null>(null);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const activePresets = useMemo(
     () => new Set(PRESETS.filter(p => presetMatchesRules(p.rules, rules)).map(p => p.name)),
@@ -526,8 +529,41 @@ export default function SettingsScreen() {
           </React.Fragment>
         ))}
 
+        {/* Data Management */}
+        <Text style={styles.sectionTitle}>Data</Text>
+        <View style={styles.presetsGrid}>
+          <TouchableOpacity
+            style={[styles.presetButton, { borderColor: Colors.danger + '40' }]}
+            onPress={() => setShowClearConfirm(true)}
+          >
+            <Text style={[styles.presetText, { color: Colors.danger }]}>Clear Training Stats</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.presetButton, { borderColor: Colors.danger + '40' }]}
+            onPress={async () => {
+              await saveSessions([]);
+              if (Platform.OS === 'web') alert('Sessions cleared');
+            }}
+          >
+            <Text style={[styles.presetText, { color: Colors.danger }]}>Clear Sessions</Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={{ height: Spacing.xxl * 2 }} />
       </ScrollView>
+
+      <ConfirmModal
+        visible={showClearConfirm}
+        title="Clear Training Stats"
+        message="This will permanently delete all drill results and performance history."
+        confirmLabel="Clear"
+        destructive
+        onConfirm={async () => {
+          await saveDrillResults([]);
+          setShowClearConfirm(false);
+        }}
+        onCancel={() => setShowClearConfirm(false)}
+      />
     </SafeAreaView>
   );
 }

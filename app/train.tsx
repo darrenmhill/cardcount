@@ -17,12 +17,12 @@ import { Card, Action, CountingSystemId } from '../src/types';
 
 type DrillType = 'menu' | 'speed' | 'strategy' | 'deviation' | 'tc';
 
-export default function TrainScreen() {
+export function TrainContent() {
   const { systemId, rules } = useStore();
   const [drill, setDrill] = useState<DrillType>('menu');
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <View style={styles.container}>
       {drill === 'menu' ? (
         <DrillMenu onSelect={setDrill} />
       ) : drill === 'speed' ? (
@@ -34,6 +34,14 @@ export default function TrainScreen() {
       ) : drill === 'tc' ? (
         <TCDrill onBack={() => setDrill('menu')} />
       ) : null}
+    </View>
+  );
+}
+
+export default function TrainScreen() {
+  return (
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <TrainContent />
     </SafeAreaView>
   );
 }
@@ -183,15 +191,23 @@ function SpeedDrill({ systemId, onBack }: { systemId: CountingSystemId; onBack: 
         </View>
       )}
 
-      {phase === 'running' && currentIdx < cards.length && (
-        <View style={styles.flashContainer}>
-          <Text style={styles.flashProgress}>{currentIdx + 1} / {cards.length}</Text>
-          <Text style={[styles.flashCard, { color: getCardColor(cards[currentIdx]) }]}>
-            {cards[currentIdx]}
-          </Text>
-          <Text style={styles.flashHint}>Keep counting...</Text>
-        </View>
-      )}
+      {phase === 'running' && currentIdx < cards.length && (() => {
+        const card = cards[currentIdx];
+        const suits = ['♠', '♥', '♦', '♣'] as const;
+        const suit = suits[(currentIdx * 7 + card.charCodeAt(0)) % 4]; // deterministic but varied
+        const isRed = suit === '♥' || suit === '♦';
+        const suitColor = isRed ? '#ef4444' : '#f1f5f9';
+        return (
+          <View style={styles.flashContainer}>
+            <Text style={styles.flashProgress}>{currentIdx + 1} / {cards.length}</Text>
+            <View style={styles.playingCard}>
+              <Text style={[styles.playingCardRank, { color: suitColor }]}>{card}</Text>
+              <Text style={[styles.playingCardSuit, { color: suitColor }]}>{suit}</Text>
+            </View>
+            <Text style={styles.flashHint}>Keep counting...</Text>
+          </View>
+        );
+      })()}
 
       {phase === 'answer' && (
         <View style={styles.answerContainer}>
@@ -592,7 +608,14 @@ const styles = StyleSheet.create({
 
   flashContainer: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   flashProgress: { color: Colors.textDim, fontSize: FontSize.md, marginBottom: Spacing.lg },
-  flashCard: { fontSize: 120, fontWeight: '900' },
+  playingCard: {
+    width: 140, height: 196, backgroundColor: '#ffffff', borderRadius: 12,
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8,
+    elevation: 8,
+  },
+  playingCardRank: { fontSize: 72, fontWeight: '900', marginBottom: -8 },
+  playingCardSuit: { fontSize: 48 },
   flashHint: { color: Colors.textDim, fontSize: FontSize.md, marginTop: Spacing.xl },
 
   answerContainer: { flex: 1, justifyContent: 'center', padding: Spacing.xl },
