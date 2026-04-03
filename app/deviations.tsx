@@ -12,12 +12,14 @@ import { DeviationPlay } from '../src/types';
 type Filter = 'all' | 'active' | 'illustrious18' | 'fab4' | 'additional';
 
 export default function DeviationsScreen() {
-  const { trueCount, rules } = useStore();
+  const { trueCount, rules, cardsDealt } = useStore();
   const [filter, setFilter] = useState<Filter>('all');
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const surrenderAvail = rules.surrenderAvailable !== 'none';
-  const activeDevs = getActiveDeviations(trueCount, surrenderAvail);
+  const activeDevs = cardsDealt > 0
+    ? getActiveDeviations(trueCount, surrenderAvail)
+    : [];
   const activeIds = new Set(activeDevs.map(d => d.id));
 
   let displayDevs: DeviationPlay[];

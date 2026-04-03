@@ -13,7 +13,7 @@ import { Action, DeviationPlay } from '../src/types';
 type Tab = 'hard' | 'soft' | 'pair';
 
 export default function StrategyScreen() {
-  const { rules, trueCount, systemId } = useStore();
+  const { rules, trueCount, systemId, cardsDealt } = useStore();
   const [activeTab, setActiveTab] = useState<Tab>('hard');
   const [showDefault, setShowDefault] = useState(false);
   const [selectedCell, setSelectedCell] = useState<{
@@ -25,8 +25,8 @@ export default function StrategyScreen() {
 
   const surrenderAvail = rules.surrenderAvailable !== 'none';
   const activeDevs = useMemo(
-    () => getActiveDeviations(trueCount, surrenderAvail),
-    [trueCount, surrenderAvail],
+    () => cardsDealt > 0 ? getActiveDeviations(trueCount, surrenderAvail) : [],
+    [trueCount, surrenderAvail, cardsDealt],
   );
 
   // Build a lookup: handType -> playerHand -> dealerUpcard -> deviation
