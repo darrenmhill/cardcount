@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch,
 } from 'react-native';
@@ -15,9 +15,201 @@ const SYSTEM_IDS: CountingSystemId[] = [
 
 const DECK_OPTIONS: GameRules['numDecks'][] = [1, 2, 4, 6, 8];
 
+interface Preset {
+  name: string;
+  group: string;
+  rules: Partial<GameRules>;
+}
+
+// Keys to compare when matching presets against current rules
+const PRESET_KEYS: (keyof GameRules)[] = [
+  'numDecks', 'dealerHitsSoft17', 'doubleAfterSplit', 'surrenderAvailable',
+  'doubleOn', 'blackjackPays', 'dealerPeeks', 'originalBetsOnly',
+  'charlieRule', 'bjAfterSplitPays', 'csm', 'penetration',
+  'doubleAfterHit', 'maxSplitHands',
+];
+
+function presetMatchesRules(preset: Partial<GameRules>, current: GameRules): boolean {
+  for (const key of PRESET_KEYS) {
+    if (key in preset && preset[key] !== current[key]) return false;
+  }
+  return true;
+}
+
+const PRESETS: Preset[] = [
+  // North America
+  { name: 'Vegas Strip (Standard)', group: 'North America', rules: {
+    numDecks: 6, dealerHitsSoft17: true, doubleAfterSplit: true,
+    surrenderAvailable: 'late', doubleOn: 'any', blackjackPays: '3:2',
+    dealerPeeks: true, originalBetsOnly: false, charlieRule: 'none',
+    bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
+    doubleAfterHit: false, maxSplitHands: 4,
+  }},
+  { name: 'Vegas Strip (6:5)', group: 'North America', rules: {
+    numDecks: 6, dealerHitsSoft17: true, doubleAfterSplit: true,
+    surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '6:5',
+    dealerPeeks: true, originalBetsOnly: false, charlieRule: 'none',
+    bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
+    doubleAfterHit: false, maxSplitHands: 4,
+  }},
+  { name: 'Vegas Downtown', group: 'North America', rules: {
+    numDecks: 2, dealerHitsSoft17: true, doubleAfterSplit: true,
+    surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '3:2',
+    dealerPeeks: true, originalBetsOnly: false, charlieRule: 'none',
+    bjAfterSplitPays: '1:1', csm: false, penetration: 0.6,
+    doubleAfterHit: false, maxSplitHands: 4,
+  }},
+  { name: 'Single Deck (6:5)', group: 'North America', rules: {
+    numDecks: 1, dealerHitsSoft17: true, doubleAfterSplit: false,
+    surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '6:5',
+    dealerPeeks: true, originalBetsOnly: false, charlieRule: 'none',
+    bjAfterSplitPays: '1:1', csm: false, penetration: 0.5,
+    doubleAfterHit: false, maxSplitHands: 4,
+  }},
+  { name: 'Atlantic City', group: 'North America', rules: {
+    numDecks: 8, dealerHitsSoft17: false, doubleAfterSplit: true,
+    surrenderAvailable: 'late', doubleOn: 'any', blackjackPays: '3:2',
+    dealerPeeks: true, originalBetsOnly: false, charlieRule: 'none',
+    bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
+    doubleAfterHit: false, maxSplitHands: 4,
+  }},
+  { name: 'Canadian Casino', group: 'North America', rules: {
+    numDecks: 8, dealerHitsSoft17: false, doubleAfterSplit: true,
+    surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '3:2',
+    dealerPeeks: true, originalBetsOnly: false, charlieRule: 'none',
+    bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
+    doubleAfterHit: false, maxSplitHands: 4,
+  }},
+  // United Kingdom
+  { name: 'UK Casino (Standard)', group: 'United Kingdom', rules: {
+    numDecks: 6, dealerHitsSoft17: false, doubleAfterSplit: true,
+    surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '3:2',
+    dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
+    bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
+    doubleAfterHit: false, maxSplitHands: 2,
+  }},
+  { name: 'UK Casino (5-Card Charlie)', group: 'United Kingdom', rules: {
+    numDecks: 6, dealerHitsSoft17: false, doubleAfterSplit: true,
+    surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '3:2',
+    dealerPeeks: false, originalBetsOnly: true, charlieRule: '5',
+    bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
+    doubleAfterHit: false, maxSplitHands: 2,
+  }},
+  { name: 'Grosvenor Casinos', group: 'United Kingdom', rules: {
+    numDecks: 6, dealerHitsSoft17: false, doubleAfterSplit: true,
+    surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '3:2',
+    dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
+    bjAfterSplitPays: '1:1', csm: false, penetration: 0.7,
+    doubleAfterHit: false, maxSplitHands: 2,
+  }},
+  { name: 'Hippodrome London', group: 'United Kingdom', rules: {
+    numDecks: 8, dealerHitsSoft17: false, doubleAfterSplit: true,
+    surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '3:2',
+    dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
+    bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
+    doubleAfterHit: false, maxSplitHands: 2,
+  }},
+  // Europe
+  { name: 'European ENHC (Standard)', group: 'Europe', rules: {
+    numDecks: 6, dealerHitsSoft17: false, doubleAfterSplit: true,
+    surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '3:2',
+    dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
+    bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
+    doubleAfterHit: false, maxSplitHands: 3,
+  }},
+  { name: 'Holland Casino', group: 'Europe', rules: {
+    numDecks: 6, dealerHitsSoft17: false, doubleAfterSplit: true,
+    surrenderAvailable: 'none', doubleOn: '9-11', blackjackPays: '3:2',
+    dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
+    bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
+    doubleAfterHit: false, maxSplitHands: 3,
+  }},
+  { name: 'German Casino', group: 'Europe', rules: {
+    numDecks: 6, dealerHitsSoft17: false, doubleAfterSplit: false,
+    surrenderAvailable: 'none', doubleOn: '9-11', blackjackPays: '3:2',
+    dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
+    bjAfterSplitPays: '1:1', csm: false, penetration: 0.7,
+    doubleAfterHit: false, maxSplitHands: 3,
+  }},
+  { name: 'French Casino', group: 'Europe', rules: {
+    numDecks: 6, dealerHitsSoft17: false, doubleAfterSplit: true,
+    surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '3:2',
+    dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
+    bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
+    doubleAfterHit: false, maxSplitHands: 2,
+  }},
+  { name: 'Spanish Casino', group: 'Europe', rules: {
+    numDecks: 6, dealerHitsSoft17: false, doubleAfterSplit: true,
+    surrenderAvailable: 'late', doubleOn: 'any', blackjackPays: '3:2',
+    dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
+    bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
+    doubleAfterHit: false, maxSplitHands: 3,
+  }},
+  { name: 'Czech / Eastern Europe', group: 'Europe', rules: {
+    numDecks: 6, dealerHitsSoft17: false, doubleAfterSplit: true,
+    surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '3:2',
+    dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
+    bjAfterSplitPays: '1:1', csm: false, penetration: 0.7,
+    doubleAfterHit: false, maxSplitHands: 4,
+  }},
+  // Asia-Pacific
+  { name: 'Macau (Standard)', group: 'Asia-Pacific', rules: {
+    numDecks: 8, dealerHitsSoft17: false, doubleAfterSplit: true,
+    surrenderAvailable: 'late', doubleOn: 'any', blackjackPays: '3:2',
+    dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
+    bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
+    doubleAfterHit: false, maxSplitHands: 3,
+  }},
+  { name: 'Crown Melbourne', group: 'Asia-Pacific', rules: {
+    numDecks: 8, dealerHitsSoft17: false, doubleAfterSplit: true,
+    surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '3:2',
+    dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
+    bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
+    doubleAfterHit: false, maxSplitHands: 3,
+  }},
+  { name: 'Marina Bay Sands', group: 'Asia-Pacific', rules: {
+    numDecks: 8, dealerHitsSoft17: false, doubleAfterSplit: true,
+    surrenderAvailable: 'late', doubleOn: 'any', blackjackPays: '3:2',
+    dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
+    bjAfterSplitPays: '1:1', csm: false, penetration: 0.7,
+    doubleAfterHit: false, maxSplitHands: 3,
+  }},
+  // Special
+  { name: 'Best Possible Rules', group: 'Special', rules: {
+    numDecks: 1, dealerHitsSoft17: false, doubleAfterSplit: true,
+    surrenderAvailable: 'early', doubleOn: 'any', blackjackPays: '3:2',
+    dealerPeeks: true, originalBetsOnly: false, charlieRule: '5',
+    bjAfterSplitPays: '3:2', csm: false, resplitAces: true,
+    hitSplitAces: true, penetration: 0.85, doubleAfterHit: true,
+    maxSplitHands: 4,
+  }},
+  { name: 'Worst Common Rules', group: 'Special', rules: {
+    numDecks: 8, dealerHitsSoft17: true, doubleAfterSplit: false,
+    surrenderAvailable: 'none', doubleOn: '10-11', blackjackPays: '6:5',
+    dealerPeeks: false, originalBetsOnly: false, charlieRule: 'none',
+    bjAfterSplitPays: '1:1', csm: false, resplitAces: false,
+    hitSplitAces: false, penetration: 0.5, doubleAfterHit: false,
+    maxSplitHands: 2,
+  }},
+  { name: 'Online Casino (Typical)', group: 'Special', rules: {
+    numDecks: 8, dealerHitsSoft17: false, doubleAfterSplit: true,
+    surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '3:2',
+    dealerPeeks: true, originalBetsOnly: false, charlieRule: 'none',
+    bjAfterSplitPays: '1:1', csm: false, penetration: 0.5,
+    doubleAfterHit: false, maxSplitHands: 4,
+  }},
+];
+
+const PRESET_GROUPS = ['North America', 'United Kingdom', 'Europe', 'Asia-Pacific', 'Special'];
+
 export default function SettingsScreen() {
   const { systemId, setSystem, rules, updateRules } = useStore();
   const [showSystemDetail, setShowSystemDetail] = useState<CountingSystemId | null>(null);
+
+  const activePreset = useMemo(
+    () => PRESETS.find(p => presetMatchesRules(p.rules, rules))?.name ?? null,
+    [rules],
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -297,248 +489,27 @@ export default function SettingsScreen() {
 
         {/* Presets */}
         <Text style={styles.sectionTitle}>Casino Presets</Text>
+        {activePreset && (
+          <View style={styles.activePresetBanner}>
+            <Text style={styles.activePresetText}>{activePreset}</Text>
+          </View>
+        )}
 
-        <Text style={styles.presetGroupTitle}>North America</Text>
-        <View style={styles.presetsGrid}>
-          <PresetButton
-            name="Vegas Strip (Standard)"
-            onPress={() => updateRules({
-              numDecks: 6, dealerHitsSoft17: true, doubleAfterSplit: true,
-              surrenderAvailable: 'late', doubleOn: 'any', blackjackPays: '3:2',
-              dealerPeeks: true, originalBetsOnly: false, charlieRule: 'none',
-              bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
-              doubleAfterHit: false, maxSplitHands: 4,
-            })}
-          />
-          <PresetButton
-            name="Vegas Strip (6:5)"
-            onPress={() => updateRules({
-              numDecks: 6, dealerHitsSoft17: true, doubleAfterSplit: true,
-              surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '6:5',
-              dealerPeeks: true, originalBetsOnly: false, charlieRule: 'none',
-              bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
-              doubleAfterHit: false, maxSplitHands: 4,
-            })}
-          />
-          <PresetButton
-            name="Vegas Downtown"
-            onPress={() => updateRules({
-              numDecks: 2, dealerHitsSoft17: true, doubleAfterSplit: true,
-              surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '3:2',
-              dealerPeeks: true, originalBetsOnly: false, charlieRule: 'none',
-              bjAfterSplitPays: '1:1', csm: false, penetration: 0.6,
-              doubleAfterHit: false, maxSplitHands: 4,
-            })}
-          />
-          <PresetButton
-            name="Single Deck (6:5)"
-            onPress={() => updateRules({
-              numDecks: 1, dealerHitsSoft17: true, doubleAfterSplit: false,
-              surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '6:5',
-              dealerPeeks: true, originalBetsOnly: false, charlieRule: 'none',
-              bjAfterSplitPays: '1:1', csm: false, penetration: 0.5,
-              doubleAfterHit: false, maxSplitHands: 4,
-            })}
-          />
-          <PresetButton
-            name="Atlantic City"
-            onPress={() => updateRules({
-              numDecks: 8, dealerHitsSoft17: false, doubleAfterSplit: true,
-              surrenderAvailable: 'late', doubleOn: 'any', blackjackPays: '3:2',
-              dealerPeeks: true, originalBetsOnly: false, charlieRule: 'none',
-              bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
-              doubleAfterHit: false, maxSplitHands: 4,
-            })}
-          />
-          <PresetButton
-            name="Canadian Casino"
-            onPress={() => updateRules({
-              numDecks: 8, dealerHitsSoft17: false, doubleAfterSplit: true,
-              surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '3:2',
-              dealerPeeks: true, originalBetsOnly: false, charlieRule: 'none',
-              bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
-              doubleAfterHit: false, maxSplitHands: 4,
-            })}
-          />
-        </View>
-
-        <Text style={styles.presetGroupTitle}>United Kingdom</Text>
-        <View style={styles.presetsGrid}>
-          <PresetButton
-            name="UK Casino (Standard)"
-            onPress={() => updateRules({
-              numDecks: 6, dealerHitsSoft17: false, doubleAfterSplit: true,
-              surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '3:2',
-              dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
-              bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
-              doubleAfterHit: false, maxSplitHands: 2,
-            })}
-          />
-          <PresetButton
-            name="UK Casino (5-Card Charlie)"
-            onPress={() => updateRules({
-              numDecks: 6, dealerHitsSoft17: false, doubleAfterSplit: true,
-              surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '3:2',
-              dealerPeeks: false, originalBetsOnly: true, charlieRule: '5',
-              bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
-              doubleAfterHit: false, maxSplitHands: 2,
-            })}
-          />
-          <PresetButton
-            name="Grosvenor Casinos"
-            onPress={() => updateRules({
-              numDecks: 6, dealerHitsSoft17: false, doubleAfterSplit: true,
-              surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '3:2',
-              dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
-              bjAfterSplitPays: '1:1', csm: false, penetration: 0.7,
-              doubleAfterHit: false, maxSplitHands: 2,
-            })}
-          />
-          <PresetButton
-            name="Hippodrome London"
-            onPress={() => updateRules({
-              numDecks: 8, dealerHitsSoft17: false, doubleAfterSplit: true,
-              surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '3:2',
-              dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
-              bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
-              doubleAfterHit: false, maxSplitHands: 2,
-            })}
-          />
-        </View>
-
-        <Text style={styles.presetGroupTitle}>Europe</Text>
-        <View style={styles.presetsGrid}>
-          <PresetButton
-            name="European ENHC (Standard)"
-            onPress={() => updateRules({
-              numDecks: 6, dealerHitsSoft17: false, doubleAfterSplit: true,
-              surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '3:2',
-              dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
-              bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
-              doubleAfterHit: false, maxSplitHands: 3,
-            })}
-          />
-          <PresetButton
-            name="Holland Casino"
-            onPress={() => updateRules({
-              numDecks: 6, dealerHitsSoft17: false, doubleAfterSplit: true,
-              surrenderAvailable: 'none', doubleOn: '9-11', blackjackPays: '3:2',
-              dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
-              bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
-              doubleAfterHit: false, maxSplitHands: 3,
-            })}
-          />
-          <PresetButton
-            name="German Casino"
-            onPress={() => updateRules({
-              numDecks: 6, dealerHitsSoft17: false, doubleAfterSplit: false,
-              surrenderAvailable: 'none', doubleOn: '9-11', blackjackPays: '3:2',
-              dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
-              bjAfterSplitPays: '1:1', csm: false, penetration: 0.7,
-              doubleAfterHit: false, maxSplitHands: 3,
-            })}
-          />
-          <PresetButton
-            name="French Casino"
-            onPress={() => updateRules({
-              numDecks: 6, dealerHitsSoft17: false, doubleAfterSplit: true,
-              surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '3:2',
-              dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
-              bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
-              doubleAfterHit: false, maxSplitHands: 2,
-            })}
-          />
-          <PresetButton
-            name="Spanish Casino"
-            onPress={() => updateRules({
-              numDecks: 6, dealerHitsSoft17: false, doubleAfterSplit: true,
-              surrenderAvailable: 'late', doubleOn: 'any', blackjackPays: '3:2',
-              dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
-              bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
-              doubleAfterHit: false, maxSplitHands: 3,
-            })}
-          />
-          <PresetButton
-            name="Czech / Eastern Europe"
-            onPress={() => updateRules({
-              numDecks: 6, dealerHitsSoft17: false, doubleAfterSplit: true,
-              surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '3:2',
-              dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
-              bjAfterSplitPays: '1:1', csm: false, penetration: 0.7,
-              doubleAfterHit: false, maxSplitHands: 4,
-            })}
-          />
-        </View>
-
-        <Text style={styles.presetGroupTitle}>Asia-Pacific</Text>
-        <View style={styles.presetsGrid}>
-          <PresetButton
-            name="Macau (Standard)"
-            onPress={() => updateRules({
-              numDecks: 8, dealerHitsSoft17: false, doubleAfterSplit: true,
-              surrenderAvailable: 'late', doubleOn: 'any', blackjackPays: '3:2',
-              dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
-              bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
-              doubleAfterHit: false, maxSplitHands: 3,
-            })}
-          />
-          <PresetButton
-            name="Crown Melbourne"
-            onPress={() => updateRules({
-              numDecks: 8, dealerHitsSoft17: false, doubleAfterSplit: true,
-              surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '3:2',
-              dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
-              bjAfterSplitPays: '1:1', csm: false, penetration: 0.75,
-              doubleAfterHit: false, maxSplitHands: 3,
-            })}
-          />
-          <PresetButton
-            name="Marina Bay Sands"
-            onPress={() => updateRules({
-              numDecks: 8, dealerHitsSoft17: false, doubleAfterSplit: true,
-              surrenderAvailable: 'late', doubleOn: 'any', blackjackPays: '3:2',
-              dealerPeeks: false, originalBetsOnly: true, charlieRule: 'none',
-              bjAfterSplitPays: '1:1', csm: false, penetration: 0.7,
-              doubleAfterHit: false, maxSplitHands: 3,
-            })}
-          />
-        </View>
-
-        <Text style={styles.presetGroupTitle}>Special</Text>
-        <View style={styles.presetsGrid}>
-          <PresetButton
-            name="Best Possible Rules"
-            onPress={() => updateRules({
-              numDecks: 1, dealerHitsSoft17: false, doubleAfterSplit: true,
-              surrenderAvailable: 'early', doubleOn: 'any', blackjackPays: '3:2',
-              dealerPeeks: true, originalBetsOnly: false, charlieRule: '5',
-              bjAfterSplitPays: '3:2', csm: false, resplitAces: true,
-              hitSplitAces: true, penetration: 0.85, doubleAfterHit: true,
-              maxSplitHands: 4,
-            })}
-          />
-          <PresetButton
-            name="Worst Common Rules"
-            onPress={() => updateRules({
-              numDecks: 8, dealerHitsSoft17: true, doubleAfterSplit: false,
-              surrenderAvailable: 'none', doubleOn: '10-11', blackjackPays: '6:5',
-              dealerPeeks: false, originalBetsOnly: false, charlieRule: 'none',
-              bjAfterSplitPays: '1:1', csm: false, resplitAces: false,
-              hitSplitAces: false, penetration: 0.5, doubleAfterHit: false,
-              maxSplitHands: 2,
-            })}
-          />
-          <PresetButton
-            name="Online Casino (Typical)"
-            onPress={() => updateRules({
-              numDecks: 8, dealerHitsSoft17: false, doubleAfterSplit: true,
-              surrenderAvailable: 'none', doubleOn: 'any', blackjackPays: '3:2',
-              dealerPeeks: true, originalBetsOnly: false, charlieRule: 'none',
-              bjAfterSplitPays: '1:1', csm: false, penetration: 0.5,
-              doubleAfterHit: false, maxSplitHands: 4,
-            })}
-          />
-        </View>
+        {PRESET_GROUPS.map(group => (
+          <React.Fragment key={group}>
+            <Text style={styles.presetGroupTitle}>{group}</Text>
+            <View style={styles.presetsGrid}>
+              {PRESETS.filter(p => p.group === group).map(preset => (
+                <PresetButton
+                  key={preset.name}
+                  name={preset.name}
+                  active={activePreset === preset.name}
+                  onPress={() => updateRules(preset.rules)}
+                />
+              ))}
+            </View>
+          </React.Fragment>
+        ))}
 
         <View style={{ height: Spacing.xxl * 2 }} />
       </ScrollView>
@@ -569,10 +540,14 @@ function SettingRow({ label, value, onToggle, description, warning }: {
   );
 }
 
-function PresetButton({ name, onPress }: { name: string; onPress: () => void }) {
+function PresetButton({ name, active, onPress }: { name: string; active: boolean; onPress: () => void }) {
   return (
-    <TouchableOpacity style={styles.presetButton} onPress={onPress} activeOpacity={0.7}>
-      <Text style={styles.presetText}>{name}</Text>
+    <TouchableOpacity
+      style={[styles.presetButton, active && styles.presetButtonActive]}
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <Text style={[styles.presetText, active && styles.presetTextActive]}>{name}</Text>
     </TouchableOpacity>
   );
 }
@@ -776,6 +751,21 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: Spacing.sm,
   },
+  activePresetBanner: {
+    backgroundColor: Colors.secondary + '15',
+    borderWidth: 1,
+    borderColor: Colors.secondary,
+    borderRadius: 8,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+  },
+  activePresetText: {
+    color: Colors.secondary,
+    fontSize: FontSize.sm,
+    fontWeight: '700',
+  },
   presetButton: {
     backgroundColor: Colors.surface,
     paddingHorizontal: Spacing.lg,
@@ -784,9 +774,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.secondary + '40',
   },
+  presetButtonActive: {
+    backgroundColor: Colors.secondary + '20',
+    borderColor: Colors.secondary,
+  },
   presetText: {
     color: Colors.secondary,
     fontSize: FontSize.sm,
     fontWeight: '600',
+  },
+  presetTextActive: {
+    color: Colors.text,
+    fontWeight: '700',
   },
 });
