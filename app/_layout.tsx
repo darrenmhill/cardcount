@@ -69,7 +69,7 @@ export default function Layout() {
           },
           tabBarActiveTintColor: Colors.primary,
           tabBarInactiveTintColor: Colors.textDim,
-          tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+          tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
         }}
       >
         <Tabs.Screen
@@ -84,24 +84,24 @@ export default function Layout() {
           name="strategy"
           options={{
             title: 'Strategy',
-            headerTitle: 'Basic Strategy',
-            tabBarIcon: ({ focused }) => <TabIcon emoji="📊" focused={focused} />,
+            headerTitle: 'Strategy',
+            tabBarIcon: ({ focused }) => <TabIcon emoji="📊" focused={focused} badge={activeDevCount} />,
           }}
         />
         <Tabs.Screen
-          name="deviations"
+          name="train"
           options={{
-            title: 'Deviations',
-            headerTitle: 'Index Plays',
-            tabBarIcon: ({ focused }) => <TabIcon emoji="⚡" focused={focused} badge={activeDevCount} />,
+            title: 'Train',
+            headerTitle: 'Training',
+            tabBarIcon: ({ focused }) => <TabIcon emoji="🎯" focused={focused} />,
           }}
         />
         <Tabs.Screen
-          name="betting"
+          name="sessions"
           options={{
-            title: 'Betting',
-            headerTitle: 'Bet Spread',
-            tabBarIcon: ({ focused }) => <TabIcon emoji="💰" focused={focused} />,
+            title: 'Sessions',
+            headerTitle: 'Sessions & Tools',
+            tabBarIcon: ({ focused }) => <TabIcon emoji="📈" focused={focused} />,
           }}
         />
         <Tabs.Screen
@@ -112,6 +112,9 @@ export default function Layout() {
             tabBarIcon: ({ focused }) => <TabIcon emoji="⚙️" focused={focused} />,
           }}
         />
+        {/* Hidden screens - still accessible but not in tab bar */}
+        <Tabs.Screen name="deviations" options={{ href: null }} />
+        <Tabs.Screen name="betting" options={{ href: null }} />
       </Tabs>
     </>
   );
