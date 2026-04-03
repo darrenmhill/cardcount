@@ -13,6 +13,18 @@ const SYSTEM_IDS: CountingSystemId[] = [
   'wong-halves', 'ko', 'red-7', 'ace-five',
 ];
 
+const SYSTEM_SUMMARIES: Record<CountingSystemId, string> = {
+  'hi-lo': 'Most popular system. Simple, effective, great all-rounder.',
+  'hi-opt-i': 'Better playing accuracy than Hi-Lo. Requires ace side count.',
+  'hi-opt-ii': 'Multi-level — higher accuracy, harder to use in the field.',
+  'omega-ii': 'Excellent correlation for both betting and playing decisions.',
+  'zen': 'Strong multi-level system that includes aces in the main count.',
+  'wong-halves': 'Highest accuracy of all systems. Uses fractional values.',
+  'ko': 'No true count needed — uses running count directly. Beginner-friendly.',
+  'red-7': 'Unbalanced and simple. Red 7s count +1, black 7s count 0.',
+  'ace-five': 'Simplest system — only tracks aces and fives. Casual use.',
+};
+
 const DECK_OPTIONS: GameRules['numDecks'][] = [1, 2, 4, 6, 8];
 
 interface Preset {
@@ -243,6 +255,7 @@ export default function SettingsScreen() {
                   </Text>
                   {isSelected && <View style={styles.selectedDot} />}
                 </View>
+                <Text style={styles.systemCardSummary}>{SYSTEM_SUMMARIES[id]}</Text>
                 <View style={styles.systemCardMeta}>
                   <Text style={styles.systemCardTag}>
                     Lvl {sys.level}
@@ -624,10 +637,16 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     backgroundColor: Colors.primary,
   },
+  systemCardSummary: {
+    color: Colors.textDim,
+    fontSize: FontSize.xs,
+    marginTop: 3,
+    lineHeight: 16,
+  },
   systemCardMeta: {
     flexDirection: 'row',
     gap: Spacing.sm,
-    marginTop: Spacing.xs,
+    marginTop: Spacing.sm,
   },
   systemCardTag: {
     color: Colors.textDim,
