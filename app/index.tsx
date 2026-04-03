@@ -307,7 +307,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: Spacing.lg,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.lg,
   },
   systemBadge: {
     alignItems: 'center',
@@ -447,7 +448,7 @@ const styles = StyleSheet.create({
   },
   cardGrid: {
     backgroundColor: Colors.surface,
-    paddingHorizontal: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
     paddingTop: Spacing.md,
     paddingBottom: Spacing.sm,
     borderTopWidth: 1,
@@ -457,16 +458,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     marginBottom: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
   },
   cardButton: {
-    width: 46,
+    flex: 1,
+    maxWidth: 52,
     height: 56,
     backgroundColor: Colors.cardElevated,
     borderRadius: 8,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
-    marginHorizontal: 3,
+    marginHorizontal: 2,
   },
   cardButtonExhausted: {
     opacity: 0.3,
@@ -487,11 +490,12 @@ const styles = StyleSheet.create({
   actionRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: Spacing.md,
     marginTop: Spacing.xs,
+    paddingHorizontal: Spacing.xs,
   },
   actionButton: {
     flex: 1,
+    marginHorizontal: Spacing.xs,
     paddingVertical: Spacing.md,
     borderRadius: 8,
     alignItems: 'center',
