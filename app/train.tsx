@@ -245,11 +245,11 @@ function SpeedDrill({ systemId, onBack }: { systemId: CountingSystemId; onBack: 
             Time: {((Date.now() - startTime) / 1000).toFixed(1)}s for {cardCount} cards
           </Text>
           <View style={styles.resultActions}>
-            <TouchableOpacity style={[styles.optBtn, { flex: 1 }]} onPress={onBack}>
-              <Text style={styles.optText}>Back</Text>
+            <TouchableOpacity style={[styles.resultBtn, styles.resultBtnBack]} onPress={onBack}>
+              <Text style={styles.resultBtnBackText}>Back</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.startBtn, { flex: 1 }]} onPress={() => { setUserAnswer(''); startDrill(); }}>
-              <Text style={styles.startBtnText}>Again</Text>
+            <TouchableOpacity style={[styles.resultBtn, styles.resultBtnAgain]} onPress={() => { setUserAnswer(''); startDrill(); }}>
+              <Text style={styles.resultBtnAgainText}>Again</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -304,7 +304,7 @@ function StrategyDrill({ rules, onBack }: { rules: any; onBack: () => void }) {
 
   return (
     <View style={styles.drillContainer}>
-      <DrillHeader title="Basic Strategy" subtitle={`${score.correct}/${score.total} of ${DRILL_ROUNDS}`} onBack={onBack} />
+      <DrillHeader title="Basic Strategy" subtitle={`${score.total}/${DRILL_ROUNDS}`} onBack={onBack} />
 
       {done ? (
         <View style={styles.resultContainer}>
@@ -318,11 +318,11 @@ function StrategyDrill({ rules, onBack }: { rules: any; onBack: () => void }) {
             Time: {((Date.now() - startTime) / 1000).toFixed(0)}s
           </Text>
           <View style={styles.resultActions}>
-            <TouchableOpacity style={[styles.optBtn, { flex: 1 }]} onPress={onBack}>
-              <Text style={styles.optText}>Back</Text>
+            <TouchableOpacity style={[styles.resultBtn, styles.resultBtnBack]} onPress={onBack}>
+              <Text style={styles.resultBtnBackText}>Back</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.startBtn, { flex: 1 }]} onPress={restart}>
-              <Text style={styles.startBtnText}>Again</Text>
+            <TouchableOpacity style={[styles.resultBtn, styles.resultBtnAgain]} onPress={restart}>
+              <Text style={styles.resultBtnAgainText}>Again</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -419,7 +419,7 @@ function DeviationDrill({ rules, systemId, onBack }: { rules: any; systemId: Cou
 
   return (
     <View style={styles.drillContainer}>
-      <DrillHeader title={`Deviations (${system.name})`} subtitle={`${score.correct}/${score.total} of ${DRILL_ROUNDS}`} onBack={onBack} />
+      <DrillHeader title={`Deviations (${system.name})`} subtitle={`${score.total}/${DRILL_ROUNDS}`} onBack={onBack} />
 
       {done ? (
         <View style={styles.resultContainer}>
@@ -431,11 +431,11 @@ function DeviationDrill({ rules, systemId, onBack }: { rules: any; systemId: Cou
           </Text>
           <Text style={styles.resultDetail}>Time: {((Date.now() - startTime) / 1000).toFixed(0)}s</Text>
           <View style={styles.resultActions}>
-            <TouchableOpacity style={[styles.optBtn, { flex: 1 }]} onPress={onBack}>
-              <Text style={styles.optText}>Back</Text>
+            <TouchableOpacity style={[styles.resultBtn, styles.resultBtnBack]} onPress={onBack}>
+              <Text style={styles.resultBtnBackText}>Back</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.startBtn, { flex: 1 }]} onPress={restart}>
-              <Text style={styles.startBtnText}>Again</Text>
+            <TouchableOpacity style={[styles.resultBtn, styles.resultBtnAgain]} onPress={restart}>
+              <Text style={styles.resultBtnAgainText}>Again</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -553,7 +553,7 @@ function TCDrill({ onBack }: { onBack: () => void }) {
 
   return (
     <View style={styles.drillContainer}>
-      <DrillHeader title="TC Conversion" subtitle={`${score.correct}/${score.total} of ${DRILL_ROUNDS}`} onBack={onBack} />
+      <DrillHeader title="TC Conversion" subtitle={`${score.total}/${DRILL_ROUNDS}`} onBack={onBack} />
 
       {done ? (
         <View style={styles.resultContainer}>
@@ -565,11 +565,11 @@ function TCDrill({ onBack }: { onBack: () => void }) {
           </Text>
           <Text style={styles.resultDetail}>Time: {((Date.now() - startTime) / 1000).toFixed(0)}s</Text>
           <View style={styles.resultActions}>
-            <TouchableOpacity style={[styles.optBtn, { flex: 1 }]} onPress={onBack}>
-              <Text style={styles.optText}>Back</Text>
+            <TouchableOpacity style={[styles.resultBtn, styles.resultBtnBack]} onPress={onBack}>
+              <Text style={styles.resultBtnBackText}>Back</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.startBtn, { flex: 1 }]} onPress={restart}>
-              <Text style={styles.startBtnText}>Again</Text>
+            <TouchableOpacity style={[styles.resultBtn, styles.resultBtnAgain]} onPress={restart}>
+              <Text style={styles.resultBtnAgainText}>Again</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -725,7 +725,25 @@ const styles = StyleSheet.create({
   resultEmoji: { fontSize: 64, marginBottom: Spacing.md },
   resultTitle: { fontSize: FontSize.xxl, fontWeight: '800', marginBottom: Spacing.md },
   resultDetail: { color: Colors.textSecondary, fontSize: FontSize.md, marginBottom: Spacing.xs },
-  resultActions: { flexDirection: 'row', gap: Spacing.md, marginTop: Spacing.xl },
+  resultActions: {
+    flexDirection: 'row', marginTop: Spacing.xl, width: '100%',
+    paddingHorizontal: Spacing.lg, gap: Spacing.md,
+  },
+  resultBtn: {
+    flex: 1, paddingVertical: Spacing.lg, borderRadius: 12, alignItems: 'center',
+  },
+  resultBtnBack: {
+    backgroundColor: Colors.surfaceLight,
+  },
+  resultBtnBackText: {
+    color: Colors.textSecondary, fontSize: FontSize.lg, fontWeight: '700',
+  },
+  resultBtnAgain: {
+    backgroundColor: Colors.primaryDim,
+  },
+  resultBtnAgainText: {
+    color: Colors.text, fontSize: FontSize.lg, fontWeight: '700',
+  },
 
   quizContainer: { flex: 1, padding: Spacing.lg, justifyContent: 'center' },
   handDisplay: {
