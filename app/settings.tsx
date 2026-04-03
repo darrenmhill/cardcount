@@ -206,8 +206,8 @@ export default function SettingsScreen() {
   const { systemId, setSystem, rules, updateRules } = useStore();
   const [showSystemDetail, setShowSystemDetail] = useState<CountingSystemId | null>(null);
 
-  const activePreset = useMemo(
-    () => PRESETS.find(p => presetMatchesRules(p.rules, rules))?.name ?? null,
+  const activePresets = useMemo(
+    () => new Set(PRESETS.filter(p => presetMatchesRules(p.rules, rules)).map(p => p.name)),
     [rules],
   );
 
@@ -489,9 +489,11 @@ export default function SettingsScreen() {
 
         {/* Presets */}
         <Text style={styles.sectionTitle}>Casino Presets</Text>
-        {activePreset && (
+        {activePresets.size > 0 && (
           <View style={styles.activePresetBanner}>
-            <Text style={styles.activePresetText}>{activePreset}</Text>
+            <Text style={styles.activePresetText}>
+              {Array.from(activePresets).join('  ·  ')}
+            </Text>
           </View>
         )}
 
@@ -503,7 +505,7 @@ export default function SettingsScreen() {
                 <PresetButton
                   key={preset.name}
                   name={preset.name}
-                  active={activePreset === preset.name}
+                  active={activePresets.has(preset.name)}
                   onPress={() => updateRules(preset.rules)}
                 />
               ))}
