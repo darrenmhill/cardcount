@@ -260,42 +260,73 @@ function SpeedDrill({ systemId, onBack }: { systemId: CountingSystemId; onBack: 
 
 // ---- Strategy Drill ----
 
+const DRILL_ROUNDS = 20;
+
 function StrategyDrill({ rules, onBack }: { rules: any; onBack: () => void }) {
   const [question, setQuestion] = useState<StrategyQuestion | null>(null);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const [score, setScore] = useState({ correct: 0, total: 0 });
+  const [done, setDone] = useState(false);
   const [startTime] = useState(Date.now());
 
   useEffect(() => { setQuestion(generateStrategyQuestion(rules)); }, []);
 
   const answer = (action: Action) => {
-    if (!question || feedback) return;
+    if (!question || feedback || done) return;
     const isCorrect = action === question.correctAction;
     setFeedback(isCorrect ? 'correct' : 'wrong');
-    setScore(s => ({ correct: s.correct + (isCorrect ? 1 : 0), total: s.total + 1 }));
+    const newTotal = score.total + 1;
+    const newCorrect = score.correct + (isCorrect ? 1 : 0);
+    setScore({ correct: newCorrect, total: newTotal });
     setTimeout(() => {
       setFeedback(null);
-      setQuestion(generateStrategyQuestion(rules));
+      if (newTotal >= DRILL_ROUNDS) {
+        setDone(true);
+        saveDrillResult({
+          type: 'strategy', timestamp: Date.now(),
+          correct: newCorrect, total: newTotal,
+          durationMs: Date.now() - startTime,
+        });
+      } else {
+        setQuestion(generateStrategyQuestion(rules));
+      }
     }, isCorrect ? 600 : 1500);
   };
 
-  const finish = () => {
-    if (score.total > 0) {
-      saveDrillResult({
-        type: 'strategy', timestamp: Date.now(),
-        correct: score.correct, total: score.total,
-        durationMs: Date.now() - startTime,
-      });
-    }
-    onBack();
+  const restart = () => {
+    setScore({ correct: 0, total: 0 });
+    setDone(false);
+    setFeedback(null);
+    setQuestion(generateStrategyQuestion(rules));
   };
 
   const actions: Action[] = ['H', 'S', 'Dh', 'P', 'Rh'];
 
   return (
     <View style={styles.drillContainer}>
-      <DrillHeader title="Basic Strategy" subtitle={`${score.correct}/${score.total}`} onBack={finish} />
-      {question && (
+      <DrillHeader title="Basic Strategy" subtitle={`${score.correct}/${score.total} of ${DRILL_ROUNDS}`} onBack={onBack} />
+
+      {done ? (
+        <View style={styles.resultContainer}>
+          <Text style={styles.resultEmoji}>{score.correct / score.total >= 0.8 ? '✓' : '✗'}</Text>
+          <Text style={[styles.resultTitle, {
+            color: score.correct / score.total >= 0.8 ? Colors.positive : Colors.danger,
+          }]}>
+            {score.correct}/{score.total} correct ({(score.correct / score.total * 100).toFixed(0)}%)
+          </Text>
+          <Text style={styles.resultDetail}>
+            Time: {((Date.now() - startTime) / 1000).toFixed(0)}s
+          </Text>
+          <View style={styles.resultActions}>
+            <TouchableOpacity style={[styles.optBtn, { flex: 1 }]} onPress={onBack}>
+              <Text style={styles.optText}>Back</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.startBtn, { flex: 1 }]} onPress={restart}>
+              <Text style={styles.startBtnText}>Again</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : question && (
         <View style={styles.quizContainer}>
           <View style={styles.handDisplay}>
             <View style={styles.handCard}>
@@ -343,44 +374,72 @@ function StrategyDrill({ rules, onBack }: { rules: any; onBack: () => void }) {
 
 // ---- Deviation Drill ----
 
-function DeviationDrill({ rules, systemId, onBack }: { rules: any; systemId: string; onBack: () => void }) {
+function DeviationDrill({ rules, systemId, onBack }: { rules: any; systemId: CountingSystemId; onBack: () => void }) {
+  const system = COUNTING_SYSTEMS[systemId];
   const [question, setQuestion] = useState<DeviationQuestion | null>(null);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const [score, setScore] = useState({ correct: 0, total: 0 });
+  const [done, setDone] = useState(false);
   const [startTime] = useState(Date.now());
 
   const nextQuestion = useCallback(() => {
-    setQuestion(generateDeviationQuestion(rules, systemId as any));
+    setQuestion(generateDeviationQuestion(rules, systemId));
   }, [rules, systemId]);
 
   useEffect(() => { nextQuestion(); }, []);
 
   const answer = (action: Action) => {
-    if (!question || feedback) return;
+    if (!question || feedback || done) return;
     const isCorrect = action === question.correctAction;
     setFeedback(isCorrect ? 'correct' : 'wrong');
-    setScore(s => ({ correct: s.correct + (isCorrect ? 1 : 0), total: s.total + 1 }));
+    const newTotal = score.total + 1;
+    const newCorrect = score.correct + (isCorrect ? 1 : 0);
+    setScore({ correct: newCorrect, total: newTotal });
     setTimeout(() => {
       setFeedback(null);
-      nextQuestion();
+      if (newTotal >= DRILL_ROUNDS) {
+        setDone(true);
+        saveDrillResult({
+          type: 'deviation', timestamp: Date.now(),
+          correct: newCorrect, total: newTotal,
+          durationMs: Date.now() - startTime,
+        });
+      } else {
+        nextQuestion();
+      }
     }, isCorrect ? 600 : 2000);
   };
 
-  const finish = () => {
-    if (score.total > 0) {
-      saveDrillResult({
-        type: 'deviation', timestamp: Date.now(),
-        correct: score.correct, total: score.total,
-        durationMs: Date.now() - startTime,
-      });
-    }
-    onBack();
+  const restart = () => {
+    setScore({ correct: 0, total: 0 });
+    setDone(false);
+    setFeedback(null);
+    nextQuestion();
   };
 
   return (
     <View style={styles.drillContainer}>
-      <DrillHeader title="Deviation Decisions" subtitle={`${score.correct}/${score.total}`} onBack={finish} />
-      {question && (
+      <DrillHeader title={`Deviations (${system.name})`} subtitle={`${score.correct}/${score.total} of ${DRILL_ROUNDS}`} onBack={onBack} />
+
+      {done ? (
+        <View style={styles.resultContainer}>
+          <Text style={styles.resultEmoji}>{score.correct / score.total >= 0.8 ? '✓' : '✗'}</Text>
+          <Text style={[styles.resultTitle, {
+            color: score.correct / score.total >= 0.8 ? Colors.positive : Colors.danger,
+          }]}>
+            {score.correct}/{score.total} correct ({(score.correct / score.total * 100).toFixed(0)}%)
+          </Text>
+          <Text style={styles.resultDetail}>Time: {((Date.now() - startTime) / 1000).toFixed(0)}s</Text>
+          <View style={styles.resultActions}>
+            <TouchableOpacity style={[styles.optBtn, { flex: 1 }]} onPress={onBack}>
+              <Text style={styles.optText}>Back</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.startBtn, { flex: 1 }]} onPress={restart}>
+              <Text style={styles.startBtnText}>Again</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : question && (
         <View style={styles.quizContainer}>
           <View style={styles.handDisplay}>
             <View style={styles.handCard}>
@@ -422,17 +481,23 @@ function DeviationDrill({ rules, systemId, onBack }: { rules: any; systemId: str
           <View style={styles.actionGrid}>
             <TouchableOpacity
               style={[styles.actionBtn, { backgroundColor: Colors.hit + '20', borderColor: Colors.hit, flex: 1 }]}
-              onPress={() => answer(question.normalAction)}
+              onPress={() => {
+                // Correct if should NOT deviate
+                const chosen = question.shouldDeviate ? ('WRONG' as Action) : question.normalAction;
+                answer(chosen);
+              }}
             >
-              <Text style={[styles.actionBtnText, { color: Colors.hit }]}>Basic: {question.normalAction}</Text>
+              <Text style={[styles.actionBtnText, { color: Colors.hit }]}>Keep Basic</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.actionBtn, { backgroundColor: Colors.accent + '20', borderColor: Colors.accent, flex: 1 }]}
-              onPress={() => answer(question.shouldDeviate ? question.correctAction : question.normalAction)}
+              onPress={() => {
+                // Correct if SHOULD deviate
+                const chosen = question.shouldDeviate ? question.correctAction : ('WRONG' as Action);
+                answer(chosen);
+              }}
             >
-              <Text style={[styles.actionBtnText, { color: Colors.accent }]}>
-                {question.shouldDeviate ? `Deviate: ${question.correctAction}` : `Basic: ${question.normalAction}`}
-              </Text>
+              <Text style={[styles.actionBtnText, { color: Colors.accent }]}>Deviate</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -448,40 +513,67 @@ function TCDrill({ onBack }: { onBack: () => void }) {
   const [userAnswer, setUserAnswer] = useState('');
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const [score, setScore] = useState({ correct: 0, total: 0 });
+  const [done, setDone] = useState(false);
   const [startTime] = useState(Date.now());
 
   useEffect(() => { setQuestion(generateTCQuestion()); }, []);
 
   const submit = () => {
-    if (!question) return;
+    if (!question || done) return;
     const parsed = parseFloat(userAnswer);
     if (isNaN(parsed)) return;
-    // Accept within 0.5 of correct answer
     const isCorrect = Math.abs(parsed - question.correctTC) <= 0.5;
     setFeedback(isCorrect ? 'correct' : 'wrong');
-    setScore(s => ({ correct: s.correct + (isCorrect ? 1 : 0), total: s.total + 1 }));
+    const newTotal = score.total + 1;
+    const newCorrect = score.correct + (isCorrect ? 1 : 0);
+    setScore({ correct: newCorrect, total: newTotal });
     setTimeout(() => {
       setFeedback(null);
       setUserAnswer('');
-      setQuestion(generateTCQuestion());
+      if (newTotal >= DRILL_ROUNDS) {
+        setDone(true);
+        saveDrillResult({
+          type: 'tc-conversion', timestamp: Date.now(),
+          correct: newCorrect, total: newTotal,
+          durationMs: Date.now() - startTime,
+        });
+      } else {
+        setQuestion(generateTCQuestion());
+      }
     }, isCorrect ? 600 : 1500);
   };
 
-  const finish = () => {
-    if (score.total > 0) {
-      saveDrillResult({
-        type: 'tc-conversion', timestamp: Date.now(),
-        correct: score.correct, total: score.total,
-        durationMs: Date.now() - startTime,
-      });
-    }
-    onBack();
+  const restart = () => {
+    setScore({ correct: 0, total: 0 });
+    setDone(false);
+    setFeedback(null);
+    setUserAnswer('');
+    setQuestion(generateTCQuestion());
   };
 
   return (
     <View style={styles.drillContainer}>
-      <DrillHeader title="TC Conversion" subtitle={`${score.correct}/${score.total}`} onBack={finish} />
-      {question && (
+      <DrillHeader title="TC Conversion" subtitle={`${score.correct}/${score.total} of ${DRILL_ROUNDS}`} onBack={onBack} />
+
+      {done ? (
+        <View style={styles.resultContainer}>
+          <Text style={styles.resultEmoji}>{score.correct / score.total >= 0.8 ? '✓' : '✗'}</Text>
+          <Text style={[styles.resultTitle, {
+            color: score.correct / score.total >= 0.8 ? Colors.positive : Colors.danger,
+          }]}>
+            {score.correct}/{score.total} correct ({(score.correct / score.total * 100).toFixed(0)}%)
+          </Text>
+          <Text style={styles.resultDetail}>Time: {((Date.now() - startTime) / 1000).toFixed(0)}s</Text>
+          <View style={styles.resultActions}>
+            <TouchableOpacity style={[styles.optBtn, { flex: 1 }]} onPress={onBack}>
+              <Text style={styles.optText}>Back</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.startBtn, { flex: 1 }]} onPress={restart}>
+              <Text style={styles.startBtnText}>Again</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : question && (
         <View style={styles.quizContainer}>
           <View style={styles.tcQuestionBox}>
             <View style={styles.tcQRow}>
