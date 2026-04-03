@@ -229,10 +229,10 @@ function SpeedDrill({ systemId, onBack }: { systemId: CountingSystemId; onBack: 
             Time: {((Date.now() - startTime) / 1000).toFixed(1)}s for {cardCount} cards
           </Text>
           <View style={styles.resultActions}>
-            <TouchableOpacity style={styles.optBtn} onPress={() => { setPhase('setup'); setUserAnswer(''); }}>
-              <Text style={styles.optText}>Settings</Text>
+            <TouchableOpacity style={[styles.optBtn, { flex: 1 }]} onPress={onBack}>
+              <Text style={styles.optText}>Back</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.startBtn} onPress={() => { setUserAnswer(''); startDrill(); }}>
+            <TouchableOpacity style={[styles.startBtn, { flex: 1 }]} onPress={() => { setUserAnswer(''); startDrill(); }}>
               <Text style={styles.startBtnText}>Again</Text>
             </TouchableOpacity>
           </View>
