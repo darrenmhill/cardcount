@@ -77,6 +77,13 @@ export default function CountScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+        {/* CSM Warning */}
+        {rules.csm && (
+          <View style={styles.csmBanner}>
+            <Text style={styles.csmBannerText}>CSM table — counting is ineffective</Text>
+          </View>
+        )}
+
         {/* System badge */}
         <Tooltip
           title={system.name}
@@ -475,5 +482,19 @@ const styles = StyleSheet.create({
   },
   disabled: {
     opacity: 0.3,
+  },
+  csmBanner: {
+    backgroundColor: Colors.danger + '20',
+    borderWidth: 1,
+    borderColor: Colors.danger,
+    borderRadius: 8,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    alignItems: 'center',
+  },
+  csmBannerText: {
+    color: Colors.danger,
+    fontSize: FontSize.md,
+    fontWeight: '700',
   },
 });

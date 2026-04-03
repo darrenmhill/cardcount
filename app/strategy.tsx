@@ -208,7 +208,7 @@ export default function StrategyScreen() {
         <View style={styles.rulesBox}>
           <Text style={styles.rulesTitle}>Current Rules</Text>
           <Text style={styles.rulesText}>
-            {rules.numDecks} deck{rules.numDecks > 1 ? 's' : ''} • {rules.dealerHitsSoft17 ? 'H17' : 'S17'} • {rules.doubleAfterSplit ? 'DAS' : 'No DAS'} • {rules.surrenderAvailable === 'none' ? 'No Surrender' : rules.surrenderAvailable === 'late' ? 'Late Surrender' : 'Early Surrender'} • Double on {rules.doubleOn} • BJ pays {rules.blackjackPays}
+            {rules.numDecks} deck{rules.numDecks > 1 ? 's' : ''} • {rules.dealerHitsSoft17 ? 'H17' : 'S17'} • {rules.doubleAfterSplit ? 'DAS' : 'No DAS'} • {rules.surrenderAvailable === 'none' ? 'No Surrender' : rules.surrenderAvailable === 'late' ? 'Late Surrender' : 'Early Surrender'} • Double on {rules.doubleOn} • BJ pays {rules.blackjackPays}{!rules.dealerPeeks ? ' • ENHC' : ''}{rules.originalBetsOnly ? ' (OBO)' : ''}{rules.charlieRule !== 'none' ? ` • ${rules.charlieRule}-Card Charlie` : ''}{rules.csm ? ' • CSM' : ''}
           </Text>
         </View>
       </ScrollView>

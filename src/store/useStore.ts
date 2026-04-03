@@ -43,7 +43,12 @@ const DEFAULT_RULES: GameRules = {
   maxSplitHands: 4,
   blackjackPays: '3:2',
   dealerPeeks: true,
+  originalBetsOnly: false,
+  charlieRule: 'none',
+  bjAfterSplitPays: '1:1',
+  csm: false,
   penetration: 0.75,
+  doubleAfterHit: false,
 };
 
 function getInitialRC(systemId: CountingSystemId, numDecks: number): number {

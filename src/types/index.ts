@@ -39,10 +39,15 @@ export interface GameRules {
   doubleOn: 'any' | '9-11' | '10-11'; // what totals can double on
   resplitAces: boolean;
   hitSplitAces: boolean;
-  maxSplitHands: number; // typically 4
-  blackjackPays: '3:2' | '6:5' | '1:1';
+  maxSplitHands: 2 | 3 | 4; // max hands from splits
+  blackjackPays: '3:2' | '6:5' | '1:1' | '2:1';
   dealerPeeks: boolean; // peek for BJ (American style)
+  originalBetsOnly: boolean; // OBO — ENHC: lose only original bet to dealer BJ
+  charlieRule: 'none' | '5' | '6' | '7'; // N-card charlie auto-win
+  bjAfterSplitPays: '3:2' | '1:1'; // does 21 after split pay BJ odds?
+  csm: boolean; // Continuous Shuffling Machine (counting useless)
   penetration: number; // 0.0-1.0, typical 0.75
+  doubleAfterHit: boolean; // can double after taking a hit (rare, some EU)
 }
 
 export type HandType = 'hard' | 'soft' | 'pair';

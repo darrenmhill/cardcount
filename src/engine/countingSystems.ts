@@ -190,6 +190,10 @@ export function calculateBaseHouseEdge(rules: {
   surrenderAvailable: string;
   doubleOn: string;
   blackjackPays: string;
+  originalBetsOnly?: boolean;
+  charlieRule?: string;
+  bjAfterSplitPays?: string;
+  doubleAfterHit?: boolean;
 }): number {
   // Start with base edge for number of decks
   let edge = 0;
@@ -220,6 +224,21 @@ export function calculateBaseHouseEdge(rules: {
   // Blackjack payout
   if (rules.blackjackPays === '6:5') edge += 1.39;
   else if (rules.blackjackPays === '1:1') edge += 2.27;
+  else if (rules.blackjackPays === '2:1') edge -= 2.27;
+
+  // OBO (Original Bets Only) — reduces ENHC penalty by ~0.11%
+  if (rules.originalBetsOnly) edge -= 0.11;
+
+  // Charlie rules — auto-win on N cards without busting
+  if (rules.charlieRule === '5') edge -= 0.16;
+  else if (rules.charlieRule === '6') edge -= 0.05;
+  else if (rules.charlieRule === '7') edge -= 0.01;
+
+  // BJ after split paying 3:2 instead of 1:1 — ~0.03% benefit
+  if (rules.bjAfterSplitPays === '3:2') edge -= 0.03;
+
+  // Double after hit — ~0.23% player benefit (very rare rule)
+  if (rules.doubleAfterHit) edge -= 0.23;
 
   return edge;
 }
