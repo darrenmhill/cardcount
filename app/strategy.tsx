@@ -437,7 +437,11 @@ const styles = StyleSheet.create({
   },
   rowHeader: {
     flex: 0,
+    flexGrow: 0,
+    flexShrink: 0,
+    flexBasis: 36,
     width: 36,
+    minWidth: 36,
     backgroundColor: Colors.surfaceLight,
   },
   headerText: {
