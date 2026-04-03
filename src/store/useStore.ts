@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Card, CountingSystemId, GameRules } from '../types';
 import { COUNTING_SYSTEMS, calculateTrueCount, getDecksRemaining, getKOInitialRC, getRed7InitialRC } from '../engine/countingSystems';
+import { Storage } from './storage';
 
 interface CardCountState {
   // Current counting system
@@ -153,12 +153,21 @@ export const useStore = create<CardCountState>((set, get) => ({
 
   loadSettings: async () => {
     try {
-      const data = await AsyncStorage.getItem('cardcount-settings');
+      const data = await Storage.get();
       if (data) {
         const parsed = JSON.parse(data);
+        const loadedSystem = parsed.systemId || 'hi-lo';
+        const loadedRules = { ...DEFAULT_RULES, ...parsed.rules };
+        const initialRC = getInitialRC(loadedSystem, loadedRules.numDecks);
         set({
-          systemId: parsed.systemId || 'hi-lo',
-          rules: { ...DEFAULT_RULES, ...parsed.rules },
+          systemId: loadedSystem,
+          rules: loadedRules,
+          runningCount: initialRC,
+          cardsDealt: 0,
+          acesDealt: 0,
+          shoeHistory: [],
+          trueCount: 0,
+          decksRemaining: loadedRules.numDecks,
         });
       }
     } catch {
@@ -169,7 +178,7 @@ export const useStore = create<CardCountState>((set, get) => ({
   saveSettings: async () => {
     const state = get();
     try {
-      await AsyncStorage.setItem('cardcount-settings', JSON.stringify({
+      await Storage.set(JSON.stringify({
         systemId: state.systemId,
         rules: state.rules,
       }));
