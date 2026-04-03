@@ -196,7 +196,7 @@ function SpeedDrill({ systemId, onBack }: { systemId: CountingSystemId; onBack: 
         const suits = ['♠', '♥', '♦', '♣'] as const;
         const suit = suits[(currentIdx * 7 + card.charCodeAt(0)) % 4]; // deterministic but varied
         const isRed = suit === '♥' || suit === '♦';
-        const suitColor = isRed ? '#ef4444' : '#f1f5f9';
+        const suitColor = isRed ? '#ef4444' : '#1a1a2e';
         return (
           <View style={styles.flashContainer}>
             <Text style={styles.flashProgress}>{currentIdx + 1} / {cards.length}</Text>
