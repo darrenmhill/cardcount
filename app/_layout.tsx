@@ -9,7 +9,7 @@ import { getActiveDeviations } from '../src/engine/deviations';
 function TabIcon({ emoji, focused, badge }: { emoji: string; focused: boolean; badge?: number }) {
   return (
     <View style={{ position: 'relative' }}>
-      <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>{emoji}</Text>
+      <Text style={{ fontSize: 18, opacity: focused ? 1 : 0.5 }}>{emoji}</Text>
       {badge != null && badge > 0 && (
         <View style={{
           position: 'absolute',
@@ -85,7 +85,7 @@ export default function Layout() {
           options={{
             title: 'Strategy',
             headerTitle: 'Strategy',
-            tabBarIcon: ({ focused }) => <TabIcon emoji="📊" focused={focused} badge={activeDevCount} />,
+            tabBarIcon: ({ focused }) => <TabIcon emoji="📊" focused={focused} />,
           }}
         />
         <Tabs.Screen
@@ -120,8 +120,14 @@ export default function Layout() {
             tabBarIcon: ({ focused }) => <TabIcon emoji="💰" focused={focused} />,
           }}
         />
-        {/* Hidden - merged into Strategy tab */}
-        <Tabs.Screen name="deviations" options={{ href: null }} />
+        <Tabs.Screen
+          name="deviations"
+          options={{
+            title: 'Deviations',
+            headerTitle: 'Index Plays',
+            tabBarIcon: ({ focused }) => <TabIcon emoji="⚡" focused={focused} badge={activeDevCount} />,
+          }}
+        />
       </Tabs>
     </>
   );
