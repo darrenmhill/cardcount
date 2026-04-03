@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert,
+  View, Text, TouchableOpacity, StyleSheet, ScrollView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../src/store/useStore';
@@ -48,10 +48,15 @@ export default function CountScreen() {
   const acesRemaining = totalAces - acesDealt;
 
   const handleReset = () => {
-    Alert.alert('New Shoe', 'Reset the count for a new shoe?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Reset', style: 'destructive', onPress: resetShoe },
-    ]);
+    if (Platform.OS === 'web') {
+      if (confirm('Reset the count for a new shoe?')) resetShoe();
+    } else {
+      const { Alert } = require('react-native');
+      Alert.alert('New Shoe', 'Reset the count for a new shoe?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Reset', style: 'destructive', onPress: resetShoe },
+      ]);
+    }
   };
 
   const getCardCountValue = (card: Card): string => {
