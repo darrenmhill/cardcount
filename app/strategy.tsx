@@ -1,29 +1,94 @@
 import React, { useState, useMemo } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView,
+  View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../src/store/useStore';
 import { Colors, Spacing, FontSize } from '../src/constants/theme';
 import { generateBasicStrategy, DEALER_CARDS, HARD_TOTALS, SOFT_TOTALS, PAIRS, getActionColor, getActionName } from '../src/engine/basicStrategy';
-import { HandType, Action } from '../src/types';
+import { getActiveDeviations } from '../src/engine/deviations';
+import { COUNTING_SYSTEMS } from '../src/engine/countingSystems';
+import { Action, DeviationPlay } from '../src/types';
 
 type Tab = 'hard' | 'soft' | 'pair';
 
 export default function StrategyScreen() {
-  const { rules } = useStore();
+  const { rules, trueCount, systemId } = useStore();
   const [activeTab, setActiveTab] = useState<Tab>('hard');
+  const [showDefault, setShowDefault] = useState(false);
+  const [selectedCell, setSelectedCell] = useState<{
+    row: string; dc: string; base: Action; dev: DeviationPlay | null;
+  } | null>(null);
 
+  const system = COUNTING_SYSTEMS[systemId];
   const strategy = useMemo(() => generateBasicStrategy(rules), [rules]);
+
+  const surrenderAvail = rules.surrenderAvailable !== 'none';
+  const activeDevs = useMemo(
+    () => getActiveDeviations(trueCount, surrenderAvail),
+    [trueCount, surrenderAvail],
+  );
+
+  // Build a lookup: handType -> playerHand -> dealerUpcard -> deviation
+  const devLookup = useMemo(() => {
+    const map = new Map<string, DeviationPlay>();
+    for (const dev of activeDevs) {
+      if (dev.playerHand === 'any') continue; // insurance — not a matrix cell
+      map.set(`${dev.handType}:${dev.playerHand}:${dev.dealerUpcard}`, dev);
+    }
+    return map;
+  }, [activeDevs]);
 
   const rows = activeTab === 'hard' ? HARD_TOTALS
     : activeTab === 'soft' ? SOFT_TOTALS
     : PAIRS;
 
-  const matrix = strategy[activeTab];
+  const baseMatrix = strategy[activeTab];
+
+  function getCell(row: string, dc: string): { action: Action; deviation: DeviationPlay | null } {
+    const baseAction = baseMatrix[row]?.[dc] || 'H' as Action;
+    if (showDefault) return { action: baseAction, deviation: null };
+
+    const dev = devLookup.get(`${activeTab}:${row}:${dc}`) ?? null;
+    if (dev) {
+      return { action: dev.deviationAction, deviation: dev };
+    }
+    return { action: baseAction, deviation: null };
+  }
+
+  const deviationCount = Array.from(devLookup.values()).filter(
+    d => d.handType === activeTab
+  ).length;
+
+  const tcColor = trueCount > 0 ? Colors.positive : trueCount < 0 ? Colors.negative : Colors.neutral;
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
+      {/* Count banner + toggle */}
+      <View style={styles.topBar}>
+        <View style={styles.tcInfo}>
+          <Text style={styles.tcLabel}>TC:</Text>
+          <Text style={[styles.tcValue, { color: tcColor }]}>
+            {trueCount > 0 ? '+' : ''}{trueCount.toFixed(1)}
+          </Text>
+          {!showDefault && deviationCount > 0 && (
+            <View style={styles.devCountBadge}>
+              <Text style={styles.devCountText}>{deviationCount} dev</Text>
+            </View>
+          )}
+        </View>
+        <TouchableOpacity
+          style={[styles.toggleButton, showDefault && styles.toggleButtonDefault]}
+          onPress={() => setShowDefault(!showDefault)}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.toggleDot, showDefault ? styles.toggleDotLeft : styles.toggleDotRight]} />
+          <Text style={styles.toggleText}>
+            {showDefault ? 'Basic' : 'Adjusted'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       {/* Tab bar */}
       <View style={styles.tabBar}>
         {(['hard', 'soft', 'pair'] as Tab[]).map(tab => (
@@ -47,6 +112,12 @@ export default function StrategyScreen() {
           <LegendItem action="Dh" label="Double" />
           <LegendItem action="P" label="Split" />
           <LegendItem action="Rh" label="Surrender" />
+          {!showDefault && (
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, styles.deviatedDot]} />
+              <Text style={styles.legendLabel}>Deviated</Text>
+            </View>
+          )}
         </View>
 
         {/* Matrix */}
@@ -73,16 +144,31 @@ export default function StrategyScreen() {
                   <Text style={styles.rowHeaderText}>{row}</Text>
                 </View>
                 {DEALER_CARDS.map(dc => {
-                  const action = matrix[row]?.[dc] || 'H';
+                  const { action, deviation } = getCell(row, dc);
+                  const isDeviated = deviation !== null;
                   return (
                     <TouchableOpacity
                       key={dc}
-                      style={[styles.cell, { backgroundColor: getActionColor(action) + '30' }]}
+                      style={[
+                        styles.cell,
+                        { backgroundColor: getActionColor(action) + '30' },
+                        isDeviated && styles.deviatedCell,
+                      ]}
                       activeOpacity={0.7}
+                      onPress={() => setSelectedCell({
+                        row, dc,
+                        base: baseMatrix[row]?.[dc] || 'H' as Action,
+                        dev: deviation,
+                      })}
                     >
-                      <Text style={[styles.cellText, { color: getActionColor(action) }]}>
+                      <Text style={[
+                        styles.cellText,
+                        { color: getActionColor(action) },
+                        isDeviated && styles.deviatedCellText,
+                      ]}>
                         {action}
                       </Text>
+                      {isDeviated && <View style={styles.deviatedMarker} />}
                     </TouchableOpacity>
                   );
                 })}
@@ -90,6 +176,19 @@ export default function StrategyScreen() {
             ))}
           </View>
         </ScrollView>
+
+        {/* Mode description */}
+        <View style={styles.modeInfo}>
+          {showDefault ? (
+            <Text style={styles.modeText}>
+              Showing standard basic strategy for current rules. Toggle to "Adjusted" to see count-based deviations applied.
+            </Text>
+          ) : (
+            <Text style={styles.modeText}>
+              Showing count-adjusted strategy using {system.name} at TC {trueCount > 0 ? '+' : ''}{trueCount.toFixed(1)}. Cells with a gold corner are deviations from basic strategy. Tap any cell for details.
+            </Text>
+          )}
+        </View>
 
         {/* Action descriptions */}
         <View style={styles.actionDescriptions}>
@@ -113,6 +212,65 @@ export default function StrategyScreen() {
           </Text>
         </View>
       </ScrollView>
+
+      {/* Cell detail modal */}
+      <Modal
+        visible={selectedCell !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedCell(null)}
+      >
+        <Pressable style={styles.overlay} onPress={() => setSelectedCell(null)}>
+          {selectedCell && (
+            <View style={styles.detailCard}>
+              <Text style={styles.detailTitle}>
+                {activeTab === 'pair' ? `Pair of ${selectedCell.row}` : activeTab === 'soft' ? `Soft ${selectedCell.row}` : `Hard ${selectedCell.row}`} vs Dealer {selectedCell.dc}
+              </Text>
+
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Basic Strategy:</Text>
+                <Text style={[styles.detailAction, { color: getActionColor(selectedCell.base) }]}>
+                  {selectedCell.base} — {getActionName(selectedCell.base)}
+                </Text>
+              </View>
+
+              {selectedCell.dev ? (
+                <>
+                  <View style={[styles.detailRow, styles.detailDevRow]}>
+                    <Text style={styles.detailLabel}>Count-Adjusted:</Text>
+                    <Text style={[styles.detailAction, { color: getActionColor(selectedCell.dev.deviationAction) }]}>
+                      {selectedCell.dev.deviationAction} — {getActionName(selectedCell.dev.deviationAction)}
+                    </Text>
+                  </View>
+                  <View style={styles.detailDevInfo}>
+                    <Text style={styles.detailDevName}>{selectedCell.dev.name}</Text>
+                    <Text style={styles.detailDevIndex}>
+                      Index: TC {selectedCell.dev.direction === '>=' ? '≥' : '≤'} {selectedCell.dev.index > 0 ? '+' : ''}{selectedCell.dev.index}
+                    </Text>
+                    <Text style={styles.detailDevDesc}>{selectedCell.dev.description}</Text>
+                    <Text style={styles.detailDevCategory}>
+                      {selectedCell.dev.category === 'illustrious18' ? 'Illustrious 18' : selectedCell.dev.category === 'fab4' ? 'Fab 4' : 'Additional Deviation'}
+                    </Text>
+                  </View>
+                </>
+              ) : (
+                <View style={styles.detailNodev}>
+                  <Text style={styles.detailNodevText}>
+                    No deviation active at current count. Basic strategy applies.
+                  </Text>
+                </View>
+              )}
+
+              <TouchableOpacity
+                style={styles.detailDismiss}
+                onPress={() => setSelectedCell(null)}
+              >
+                <Text style={styles.detailDismissText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -139,6 +297,70 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
+  },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  tcInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  tcLabel: {
+    color: Colors.textDim,
+    fontSize: FontSize.sm,
+    fontWeight: '600',
+  },
+  tcValue: {
+    fontSize: FontSize.xl,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
+  },
+  devCountBadge: {
+    backgroundColor: Colors.accent + '30',
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  devCountText: {
+    color: Colors.accent,
+    fontSize: FontSize.xs,
+    fontWeight: '700',
+  },
+  toggleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primaryDim + '40',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: 20,
+    gap: Spacing.sm,
+  },
+  toggleButtonDefault: {
+    backgroundColor: Colors.surfaceLight,
+  },
+  toggleDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  toggleDotRight: {
+    backgroundColor: Colors.primary,
+  },
+  toggleDotLeft: {
+    backgroundColor: Colors.textDim,
+  },
+  toggleText: {
+    color: Colors.text,
+    fontSize: FontSize.sm,
+    fontWeight: '700',
   },
   tabBar: {
     flexDirection: 'row',
@@ -186,6 +408,11 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     marginRight: 4,
   },
+  deviatedDot: {
+    backgroundColor: Colors.accent,
+    borderWidth: 1,
+    borderColor: Colors.accent,
+  },
   legendLabel: {
     color: Colors.textSecondary,
     fontSize: FontSize.sm,
@@ -200,6 +427,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 0.5,
     borderColor: Colors.border,
+    position: 'relative',
   },
   headerCell: {
     backgroundColor: Colors.surfaceLight,
@@ -223,8 +451,44 @@ const styles = StyleSheet.create({
     fontSize: FontSize.sm,
     fontWeight: '700',
   },
+  deviatedCell: {
+    borderWidth: 1.5,
+    borderColor: Colors.accent,
+  },
+  deviatedCellText: {
+    fontWeight: '900',
+  },
+  deviatedMarker: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 0,
+    height: 0,
+    borderStyle: 'solid',
+    borderTopWidth: 8,
+    borderRightWidth: 8,
+    borderBottomWidth: 0,
+    borderLeftWidth: 0,
+    borderTopColor: 'transparent',
+    borderRightColor: Colors.accent,
+    borderBottomColor: 'transparent',
+    borderLeftColor: 'transparent',
+  },
+  modeInfo: {
+    marginTop: Spacing.lg,
+    backgroundColor: Colors.surfaceLight,
+    borderRadius: 8,
+    padding: Spacing.md,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.primary,
+  },
+  modeText: {
+    color: Colors.textSecondary,
+    fontSize: FontSize.sm,
+    lineHeight: 20,
+  },
   actionDescriptions: {
-    marginTop: Spacing.xl,
+    marginTop: Spacing.lg,
     backgroundColor: Colors.surface,
     borderRadius: 12,
     padding: Spacing.lg,
@@ -267,5 +531,106 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     fontSize: FontSize.sm,
     lineHeight: 20,
+  },
+  // Cell detail modal
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: Spacing.xl,
+  },
+  detailCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: Spacing.xl,
+    maxWidth: 360,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  detailTitle: {
+    color: Colors.text,
+    fontSize: FontSize.xl,
+    fontWeight: '800',
+    marginBottom: Spacing.lg,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  detailDevRow: {
+    backgroundColor: Colors.accent + '10',
+    marginHorizontal: -Spacing.sm,
+    paddingHorizontal: Spacing.sm,
+    borderRadius: 6,
+    borderBottomWidth: 0,
+  },
+  detailLabel: {
+    color: Colors.textDim,
+    fontSize: FontSize.sm,
+    fontWeight: '600',
+  },
+  detailAction: {
+    fontSize: FontSize.md,
+    fontWeight: '800',
+  },
+  detailDevInfo: {
+    marginTop: Spacing.md,
+    backgroundColor: Colors.surfaceLight,
+    borderRadius: 8,
+    padding: Spacing.md,
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.accent,
+  },
+  detailDevName: {
+    color: Colors.accent,
+    fontSize: FontSize.md,
+    fontWeight: '700',
+  },
+  detailDevIndex: {
+    color: Colors.primary,
+    fontSize: FontSize.sm,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  detailDevDesc: {
+    color: Colors.textSecondary,
+    fontSize: FontSize.sm,
+    lineHeight: 20,
+    marginTop: Spacing.sm,
+  },
+  detailDevCategory: {
+    color: Colors.textDim,
+    fontSize: FontSize.xs,
+    marginTop: Spacing.sm,
+    fontStyle: 'italic',
+  },
+  detailNodev: {
+    marginTop: Spacing.md,
+    padding: Spacing.md,
+    backgroundColor: Colors.surfaceLight,
+    borderRadius: 8,
+  },
+  detailNodevText: {
+    color: Colors.textDim,
+    fontSize: FontSize.sm,
+  },
+  detailDismiss: {
+    marginTop: Spacing.lg,
+    alignSelf: 'flex-end',
+    backgroundColor: Colors.primaryDim + '40',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: 8,
+  },
+  detailDismissText: {
+    color: Colors.primary,
+    fontSize: FontSize.md,
+    fontWeight: '700',
   },
 });
