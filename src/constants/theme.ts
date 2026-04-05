@@ -1,34 +1,47 @@
+import { Platform } from 'react-native';
+
 export const Colors = {
-  background: '#0a0e17',
-  surface: '#141b2d',
-  surfaceLight: '#1a2340',
-  card: '#1e293b',
-  cardElevated: '#243049',
+  // Backgrounds: deep charcoal-green (casino felt undertone)
+  background: '#0b0f0d',
+  surface: '#151a17',
+  surfaceLight: '#1c2420',
+  card: '#212b26',
+  cardElevated: '#2a3630',
 
-  primary: '#22d3ee',     // cyan
-  primaryDim: '#0e7490',
-  secondary: '#a78bfa',   // purple
-  accent: '#f59e0b',      // amber
+  // Primary: antique gold (chips, VIP, table trim)
+  primary: '#c9a84c',
+  primaryDim: '#7a6530',
 
-  success: '#10b981',
-  danger: '#ef4444',
-  warning: '#f59e0b',
+  // Secondary: deep burgundy
+  secondary: '#9b4d5a',
 
-  text: '#f1f5f9',
-  textSecondary: '#94a3b8',
-  textDim: '#64748b',
+  // Accent: champagne gold for highlights
+  accent: '#e8d5a3',
 
-  hit: '#3b82f6',        // blue
-  stand: '#ef4444',      // red
-  double: '#22c55e',     // green
-  split: '#a855f7',      // purple
-  surrender: '#f59e0b',  // amber
+  // Semantic
+  success: '#4ade80',
+  danger: '#f87171',
+  warning: '#fbbf24',
 
-  border: '#334155',
+  // Text: warm ivory tones
+  text: '#ede8df',
+  textSecondary: '#a09882',
+  textDim: '#6b6355',
 
-  positive: '#10b981',   // green for +count
-  negative: '#ef4444',   // red for -count
-  neutral: '#94a3b8',
+  // Strategy actions (distinct but harmonized)
+  hit: '#5b9bd5',        // steel blue
+  stand: '#d4605a',      // muted red
+  double: '#5dba72',     // casino green
+  split: '#9b7ec8',      // soft purple
+  surrender: '#d4a843',  // gold-amber
+
+  // Borders
+  border: '#2e3a34',
+
+  // Count indicators
+  positive: '#4ade80',
+  negative: '#f87171',
+  neutral: '#a09882',
 } as const;
 
 export const Spacing = {
@@ -49,3 +62,10 @@ export const FontSize = {
   xxl: 24,
   xxxl: 32,
 } as const;
+
+export const monoFont = Platform.select({
+  ios: 'Menlo',
+  android: 'monospace',
+  web: 'Menlo, Consolas, monospace',
+  default: 'monospace',
+});

@@ -289,12 +289,12 @@ function makeRow(action: Action): Record<string, Action> {
  */
 export function getActionColor(action: Action): string {
   switch (action) {
-    case 'H': return '#3b82f6';     // blue
-    case 'S': return '#ef4444';     // red
-    case 'D': case 'Dh': case 'Ds': return '#22c55e'; // green
-    case 'P': return '#a855f7';     // purple
-    case 'Rh': case 'Rs': case 'Rp': return '#f59e0b'; // amber
-    default: return '#64748b';
+    case 'H': return '#5b9bd5';     // steel blue
+    case 'S': return '#d4605a';     // muted red
+    case 'D': case 'Dh': case 'Ds': return '#5dba72'; // casino green
+    case 'P': return '#9b7ec8';     // soft purple
+    case 'Rh': case 'Rs': case 'Rp': return '#d4a843'; // gold-amber
+    default: return '#6b6355';
   }
 }
 

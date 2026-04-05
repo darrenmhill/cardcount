@@ -12,7 +12,7 @@ export default function Root({ children }: { children: React.ReactNode }) {
         />
 
         {/* PWA / Home screen */}
-        <meta name="theme-color" content="#0a0e17" />
+        <meta name="theme-color" content="#0b0f0d" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="CardCount" />
@@ -35,7 +35,7 @@ export default function Root({ children }: { children: React.ReactNode }) {
             touch-action: manipulation;
           }
           body {
-            background-color: #0a0e17;
+            background-color: #0b0f0d;
           }
           /* Safe area padding for notched devices when in standalone mode */
           @supports (padding: env(safe-area-inset-top)) {

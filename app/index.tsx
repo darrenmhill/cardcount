@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../src/store/useStore';
-import { Colors, Spacing, FontSize } from '../src/constants/theme';
+import { Colors, Spacing, FontSize, monoFont } from '../src/constants/theme';
 import { COUNTING_SYSTEMS } from '../src/engine/countingSystems';
 import { getRecommendedBet } from '../src/engine/betting';
 import { getActiveDeviations } from '../src/engine/deviations';
@@ -397,13 +397,16 @@ const styles = StyleSheet.create({
   },
   systemName: {
     color: Colors.primary,
-    fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontSize: FontSize.md,
+    fontWeight: '600',
+    letterSpacing: 3,
+    textTransform: 'uppercase',
   },
   systemType: {
-    color: Colors.textSecondary,
-    fontSize: FontSize.sm,
-    marginTop: 2,
+    color: Colors.textDim,
+    fontSize: FontSize.xs,
+    marginTop: 3,
+    letterSpacing: 1,
   },
   countContainer: {
     alignItems: 'center',
@@ -413,15 +416,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   countLabel: {
-    color: Colors.textSecondary,
-    fontSize: FontSize.xs,
-    fontWeight: '700',
-    letterSpacing: 2,
+    color: Colors.textDim,
+    fontSize: 9,
+    fontWeight: '500',
+    letterSpacing: 3,
+    textTransform: 'uppercase',
   },
   countValue: {
     fontSize: 72,
-    fontWeight: '800',
+    fontWeight: '200',
     fontVariant: ['tabular-nums'],
+    fontFamily: monoFont,
+    letterSpacing: -2,
   },
   rcDisplay: {
     flexDirection: 'row',
@@ -430,15 +436,17 @@ const styles = StyleSheet.create({
   },
   rcLabel: {
     color: Colors.textDim,
-    fontSize: FontSize.sm,
-    fontWeight: '600',
-    marginRight: Spacing.xs,
+    fontSize: FontSize.xs,
+    fontWeight: '500',
+    letterSpacing: 2,
+    marginRight: Spacing.sm,
   },
   rcValue: {
     color: Colors.textSecondary,
     fontSize: FontSize.lg,
-    fontWeight: '700',
+    fontWeight: '300',
     fontVariant: ['tabular-nums'],
+    fontFamily: monoFont,
   },
   statsRow: {
     flexDirection: 'row',
@@ -452,23 +460,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.surface,
     paddingVertical: Spacing.sm,
-    borderRadius: 8,
+    borderRadius: 6,
     height: 52,
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   statValue: {
     color: Colors.text,
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontWeight: '400',
     fontVariant: ['tabular-nums'],
+    fontFamily: monoFont,
   },
   statLabel: {
     color: Colors.textDim,
-    fontSize: 9,
-    fontWeight: '600',
-    marginTop: 2,
+    fontSize: 8,
+    fontWeight: '500',
+    marginTop: 3,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 2,
   },
   aceTracker: {
     backgroundColor: Colors.surfaceLight,
@@ -502,11 +513,16 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: Spacing.md,
+    shadowColor: '#c9a84c',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 2,
   },
   betLabel: {
     color: Colors.textDim,
@@ -515,8 +531,9 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   betUnits: {
-    fontSize: FontSize.xl,
-    fontWeight: '800',
+    fontSize: FontSize.xxl,
+    fontWeight: '300',
+    fontFamily: monoFont,
     marginRight: Spacing.md,
   },
   betDesc: {
@@ -539,10 +556,14 @@ const styles = StyleSheet.create({
   deviationAlert: {
     backgroundColor: Colors.surfaceLight,
     padding: Spacing.md,
-    borderRadius: 8,
+    borderRadius: 6,
     borderLeftWidth: 3,
     borderLeftColor: Colors.accent,
     marginBottom: Spacing.md,
+    shadowColor: '#e8d5a3',
+    shadowOffset: { width: -2, height: 0 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
   },
   deviationTitle: {
     color: Colors.accent,
@@ -567,8 +588,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.xs,
     paddingTop: Spacing.md,
     paddingBottom: Spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
+    borderTopWidth: 0,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 8,
   },
   cardRow: {
     flexDirection: 'row',
@@ -580,20 +605,30 @@ const styles = StyleSheet.create({
     flex: 1,
     maxWidth: 52,
     height: 56,
-    backgroundColor: Colors.cardElevated,
-    borderRadius: 8,
-    borderWidth: 1.5,
+    backgroundColor: Colors.card,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderTopWidth: 1,
+    borderTopColor: '#3a4a42',
     alignItems: 'center',
     justifyContent: 'center',
     marginHorizontal: 2,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3,
+    elevation: 3,
   },
   cardButtonExhausted: {
-    opacity: 0.3,
-    backgroundColor: Colors.card,
+    opacity: 0.2,
+    backgroundColor: Colors.surface,
+    shadowOpacity: 0,
+    elevation: 0,
   },
   cardLabel: {
     fontSize: FontSize.lg,
-    fontWeight: '800',
+    fontWeight: '600',
+    fontFamily: monoFont,
   },
   cardLabelExhausted: {
     textDecorationLine: 'line-through',
@@ -617,7 +652,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   undoButton: {
-    backgroundColor: Colors.surfaceLight,
+    backgroundColor: Colors.card,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
   resetButton: {
     backgroundColor: Colors.primaryDim,
@@ -625,7 +662,8 @@ const styles = StyleSheet.create({
   actionText: {
     color: Colors.text,
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontWeight: '600',
+    letterSpacing: 1,
   },
   disabled: {
     opacity: 0.3,
