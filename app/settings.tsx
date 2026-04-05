@@ -3,6 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FeltTexture } from '../src/components/FeltTexture';
 import { useStore } from '../src/store/useStore';
 import { Colors, Spacing, FontSize } from '../src/constants/theme';
 import { COUNTING_SYSTEMS } from '../src/engine/countingSystems';

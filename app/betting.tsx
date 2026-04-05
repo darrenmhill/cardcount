@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FeltTexture } from '../src/components/FeltTexture';
 import { useStore } from '../src/store/useStore';
 import { Colors, Spacing, FontSize } from '../src/constants/theme';
 import { getRecommendedBet, getBettingSpreadTable } from '../src/engine/betting';

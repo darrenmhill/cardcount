@@ -13,6 +13,7 @@ import { Card } from '../src/types';
 import { Tooltip } from '../src/components/Tooltip';
 import { ConfirmModal } from '../src/components/ConfirmModal';
 import { ShoeProgress } from '../src/components/ShoeProgress';
+import { FeltTexture } from '../src/components/FeltTexture';
 
 interface CardButton { label: string; card: Card; countOverride?: number; color?: string }
 
@@ -107,6 +108,7 @@ export default function CountScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
+      <FeltTexture />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         {/* CSM Warning */}
         {rules.csm && (

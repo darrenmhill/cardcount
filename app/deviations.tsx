@@ -3,6 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FeltTexture } from '../src/components/FeltTexture';
 import { useStore } from '../src/store/useStore';
 import { Colors, Spacing, FontSize } from '../src/constants/theme';
 import { ILLUSTRIOUS_18, FAB_4, ADDITIONAL_DEVIATIONS, getActiveDeviations, getDeviationDisplayIndex } from '../src/engine/deviations';

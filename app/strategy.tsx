@@ -3,6 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FeltTexture } from '../src/components/FeltTexture';
 import { useStore } from '../src/store/useStore';
 import { Colors, Spacing, FontSize } from '../src/constants/theme';
 import { generateBasicStrategy, DEALER_CARDS, HARD_TOTALS, SOFT_TOTALS, PAIRS, getActionColor, getActionName } from '../src/engine/basicStrategy';
