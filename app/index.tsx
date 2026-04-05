@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../src/store/useStore';
-import { Colors, Spacing, FontSize, monoFont } from '../src/constants/theme';
+import { Colors, Spacing, FontSize, Fonts } from '../src/constants/theme';
 import { COUNTING_SYSTEMS } from '../src/engine/countingSystems';
 import { getRecommendedBet } from '../src/engine/betting';
 import { getActiveDeviations } from '../src/engine/deviations';
@@ -398,13 +398,14 @@ const styles = StyleSheet.create({
   systemName: {
     color: Colors.primary,
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: Fonts.bodySemiBold,
     letterSpacing: 3,
     textTransform: 'uppercase',
   },
   systemType: {
     color: Colors.textDim,
     fontSize: FontSize.xs,
+    fontFamily: Fonts.body,
     marginTop: 3,
     letterSpacing: 1,
   },
@@ -418,15 +419,14 @@ const styles = StyleSheet.create({
   countLabel: {
     color: Colors.textDim,
     fontSize: 9,
-    fontWeight: '500',
+    fontFamily: Fonts.bodyMedium,
     letterSpacing: 3,
     textTransform: 'uppercase',
   },
   countValue: {
     fontSize: 72,
-    fontWeight: '200',
+    fontFamily: Fonts.monoLight,
     fontVariant: ['tabular-nums'],
-    fontFamily: monoFont,
     letterSpacing: -2,
   },
   rcDisplay: {
@@ -437,16 +437,15 @@ const styles = StyleSheet.create({
   rcLabel: {
     color: Colors.textDim,
     fontSize: FontSize.xs,
-    fontWeight: '500',
+    fontFamily: Fonts.bodyMedium,
     letterSpacing: 2,
     marginRight: Spacing.sm,
   },
   rcValue: {
     color: Colors.textSecondary,
     fontSize: FontSize.lg,
-    fontWeight: '300',
+    fontFamily: Fonts.monoLight,
     fontVariant: ['tabular-nums'],
-    fontFamily: monoFont,
   },
   statsRow: {
     flexDirection: 'row',
@@ -469,14 +468,13 @@ const styles = StyleSheet.create({
   statValue: {
     color: Colors.text,
     fontSize: FontSize.md,
-    fontWeight: '400',
+    fontFamily: Fonts.mono,
     fontVariant: ['tabular-nums'],
-    fontFamily: monoFont,
   },
   statLabel: {
     color: Colors.textDim,
     fontSize: 8,
-    fontWeight: '500',
+    fontFamily: Fonts.bodyMedium,
     marginTop: 3,
     textTransform: 'uppercase',
     letterSpacing: 2,
@@ -498,6 +496,7 @@ const styles = StyleSheet.create({
   aceLabel: {
     color: Colors.textSecondary,
     fontSize: FontSize.sm,
+    fontFamily: Fonts.body,
   },
   aceBadge: {
     paddingHorizontal: 6,
@@ -507,7 +506,7 @@ const styles = StyleSheet.create({
   },
   aceBadgeText: {
     fontSize: 9,
-    fontWeight: '800',
+    fontFamily: Fonts.bodyBold,
   },
   betBox: {
     backgroundColor: Colors.surface,
@@ -527,18 +526,19 @@ const styles = StyleSheet.create({
   betLabel: {
     color: Colors.textDim,
     fontSize: 9,
-    fontWeight: '700',
-    letterSpacing: 1,
+    fontFamily: Fonts.bodySemiBold,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
   },
   betUnits: {
     fontSize: FontSize.xxl,
-    fontWeight: '300',
-    fontFamily: monoFont,
+    fontFamily: Fonts.monoLight,
     marginRight: Spacing.md,
   },
   betDesc: {
     color: Colors.textSecondary,
     fontSize: FontSize.xs,
+    fontFamily: Fonts.body,
     flex: 1,
   },
   edgePill: {
@@ -550,7 +550,7 @@ const styles = StyleSheet.create({
   },
   edgePillText: {
     fontSize: FontSize.sm,
-    fontWeight: '800',
+    fontFamily: Fonts.monoBold,
     fontVariant: ['tabular-nums'],
   },
   deviationAlert: {
@@ -568,12 +568,13 @@ const styles = StyleSheet.create({
   deviationTitle: {
     color: Colors.accent,
     fontSize: FontSize.md,
-    fontWeight: '700',
+    fontFamily: Fonts.bodySemiBold,
     marginBottom: Spacing.xs,
   },
   deviationItem: {
     color: Colors.textSecondary,
     fontSize: FontSize.sm,
+    fontFamily: Fonts.body,
     marginLeft: Spacing.sm,
     marginBottom: 2,
   },
@@ -627,15 +628,14 @@ const styles = StyleSheet.create({
   },
   cardLabel: {
     fontSize: FontSize.lg,
-    fontWeight: '600',
-    fontFamily: monoFont,
+    fontFamily: Fonts.monoMedium,
   },
   cardLabelExhausted: {
     textDecorationLine: 'line-through',
   },
   cardRemaining: {
     fontSize: 9,
-    fontWeight: '600',
+    fontFamily: Fonts.mono,
     marginTop: 1,
   },
   actionRow: {
@@ -662,7 +662,7 @@ const styles = StyleSheet.create({
   actionText: {
     color: Colors.text,
     fontSize: FontSize.md,
-    fontWeight: '600',
+    fontFamily: Fonts.bodySemiBold,
     letterSpacing: 1,
   },
   disabled: {

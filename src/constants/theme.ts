@@ -1,5 +1,3 @@
-import { Platform } from 'react-native';
-
 export const Colors = {
   // Backgrounds: deep charcoal-green (casino felt undertone)
   background: '#0b0f0d',
@@ -63,9 +61,14 @@ export const FontSize = {
   xxxl: 32,
 } as const;
 
-export const monoFont = Platform.select({
-  ios: 'Menlo',
-  android: 'monospace',
-  web: 'Menlo, Consolas, monospace',
-  default: 'monospace',
-});
+// Font families — loaded via expo-font in _layout.tsx
+export const Fonts = {
+  body: 'Inter_400Regular',
+  bodyMedium: 'Inter_500Medium',
+  bodySemiBold: 'Inter_600SemiBold',
+  bodyBold: 'Inter_700Bold',
+  mono: 'JetBrainsMono_400Regular',
+  monoMedium: 'JetBrainsMono_500Medium',
+  monoBold: 'JetBrainsMono_700Bold',
+  monoLight: 'JetBrainsMono_300Light',
+} as const;
