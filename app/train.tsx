@@ -388,9 +388,9 @@ function DeviationDrill({ rules, systemId, onBack }: { rules: any; systemId: Cou
 
   useEffect(() => { nextQuestion(); }, []);
 
-  const answer = (action: Action) => {
+  const answerDeviation = (userChoseDeviate: boolean) => {
     if (!question || feedback || done) return;
-    const isCorrect = action === question.correctAction;
+    const isCorrect = userChoseDeviate === question.shouldDeviate;
     setFeedback(isCorrect ? 'correct' : 'wrong');
     const newTotal = score.total + 1;
     const newCorrect = score.correct + (isCorrect ? 1 : 0);
@@ -481,21 +481,13 @@ function DeviationDrill({ rules, systemId, onBack }: { rules: any; systemId: Cou
           <View style={styles.actionGrid}>
             <TouchableOpacity
               style={[styles.actionBtn, { backgroundColor: Colors.hit + '20', borderColor: Colors.hit, flex: 1 }]}
-              onPress={() => {
-                // Correct if should NOT deviate
-                const chosen = question.shouldDeviate ? ('WRONG' as Action) : question.normalAction;
-                answer(chosen);
-              }}
+              onPress={() => answerDeviation(false)}
             >
               <Text style={[styles.actionBtnText, { color: Colors.hit }]}>Keep Basic</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.actionBtn, { backgroundColor: Colors.accent + '20', borderColor: Colors.accent, flex: 1 }]}
-              onPress={() => {
-                // Correct if SHOULD deviate
-                const chosen = question.shouldDeviate ? question.correctAction : ('WRONG' as Action);
-                answer(chosen);
-              }}
+              onPress={() => answerDeviation(true)}
             >
               <Text style={[styles.actionBtnText, { color: Colors.accent }]}>Deviate</Text>
             </TouchableOpacity>

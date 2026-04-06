@@ -20,7 +20,18 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer((req, res) => {
-  let filePath = path.join(DIST, req.url === '/' ? 'index.html' : req.url);
+  // Parse URL and strip query string
+  const urlPath = decodeURIComponent(req.url.split('?')[0]);
+  let filePath = path.join(DIST, urlPath === '/' ? 'index.html' : urlPath);
+
+  // Prevent path traversal: ensure resolved path is within DIST
+  const resolvedPath = path.resolve(filePath);
+  if (!resolvedPath.startsWith(path.resolve(DIST))) {
+    res.writeHead(403);
+    res.end('Forbidden');
+    return;
+  }
+  filePath = resolvedPath;
 
   // If file doesn't exist, serve index.html (SPA fallback)
   if (!fs.existsSync(filePath)) {

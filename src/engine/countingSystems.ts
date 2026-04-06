@@ -155,12 +155,20 @@ export function getDecksRemaining(
  * where the player has the advantage
  */
 export function getKOKeyCount(numDecks: number): number {
-  // KO key count = 4 - (4 * numDecks) for standard
-  // Actually: IRC (Initial Running Count) for KO = 4 - 4*decks
-  // Key count (pivot) = +2 for 6-deck, +1 for 2-deck
-  // Standard pivot is always +2 for most practical purposes
-  // but IRC varies: 1-deck=0, 2-deck=-4, 6-deck=-20, 8-deck=-28
-  return 4 - (4 * numDecks);
+  // KO key count (pivot) — the RC at which the player has the advantage.
+  // For a standard 52-card deck: IRC + (number of cards × imbalance/52)
+  // KO has an imbalance of +4 per deck (one extra +1 card: the 7).
+  // Pivot = IRC + totalCards × (4/52) ≈ IRC + numDecks × 4
+  // This simplifies to: (4 - 4*numDecks) + 4*numDecks = +4
+  // In practice the standard pivot is approximately +2 to +4 depending on source.
+  // Using the Fuchs & Vancura published pivots:
+  switch (numDecks) {
+    case 1: return +2;
+    case 2: return +1;
+    case 6: return +2;
+    case 8: return +2;
+    default: return +2;
+  }
 }
 
 export function getKOInitialRC(numDecks: number): number {

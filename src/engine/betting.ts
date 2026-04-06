@@ -24,9 +24,7 @@ export function getRecommendedBet(
   if (trueCount === 2) return { units: 4, description: 'Moderate advantage — 4 units' };
   if (trueCount === 3) return { units: 6, description: 'Good advantage — 6 units' };
   if (trueCount === 4) return { units: 8, description: 'Strong advantage — 8 units' };
-  if (trueCount >= 5) return { units: 12, description: 'Very strong — max spread' };
-
-  return { units: 1, description: 'Minimum bet' };
+  return { units: 12, description: 'Very strong — max spread' };
 }
 
 /**
@@ -68,8 +66,8 @@ export function kellyBet(
 
   if (playerEdge <= 0) return unitSize; // minimum bet
 
-  const variance = 1.15;
-  const kellyFraction = playerEdge / variance;
+  const sd = 1.15;
+  const kellyFraction = playerEdge / (sd * sd);
 
   // Use fractional Kelly (typically half-Kelly for safety)
   const halfKelly = kellyFraction * 0.5;

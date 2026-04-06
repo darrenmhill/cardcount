@@ -80,8 +80,8 @@ export default function CountScreen() {
   // however each rank has numDecks*4 copies in the shoe
   const dealtCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const c of shoeHistory) {
-      counts[c] = (counts[c] || 0) + 1;
+    for (const entry of shoeHistory) {
+      counts[entry.card] = (counts[entry.card] || 0) + 1;
     }
     return counts;
   }, [shoeHistory]);
