@@ -107,7 +107,7 @@ export default function CountScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <FeltTexture />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         {/* CSM Warning */}

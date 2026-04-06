@@ -13,16 +13,18 @@ import { calculateBaseHouseEdge } from '../src/engine/countingSystems';
 import { calculatePerformanceStats, DrillResult } from '../src/engine/training';
 import { Session, loadSessions, saveSessions, loadDrillResults } from '../src/store/sessions';
 import { TrainContent } from './train';
+import { BettingContent } from './betting';
 
-type Tab = 'train' | 'sessions' | 'bankroll' | 'stats' | 'variance';
+type Tab = 'betting' | 'train' | 'sessions' | 'bankroll' | 'stats' | 'variance';
 
 export default function OtherScreen() {
-  const [activeTab, setActiveTab] = useState<Tab>('train');
+  const [activeTab, setActiveTab] = useState<Tab>('betting');
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabBar}>
         {([
+          { key: 'betting', label: 'Betting' },
           { key: 'train', label: 'Train' },
           { key: 'sessions', label: 'Sessions' },
           { key: 'bankroll', label: 'Bankroll' },
@@ -39,7 +41,8 @@ export default function OtherScreen() {
         ))}
       </ScrollView>
 
-      {activeTab === 'train' ? <TrainTab /> :
+      {activeTab === 'betting' ? <BettingContent /> :
+       activeTab === 'train' ? <TrainTab /> :
        activeTab === 'sessions' ? <SessionsTab /> :
        activeTab === 'bankroll' ? <BankrollTab /> :
        activeTab === 'stats' ? <StatsTab /> :

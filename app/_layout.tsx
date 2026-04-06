@@ -123,14 +123,6 @@ export default function Layout() {
           }}
         />
         <Tabs.Screen
-          name="betting"
-          options={{
-            title: 'Betting',
-            headerTitle: 'Bet Spread',
-            tabBarIcon: ({ focused }) => <TabIcon emoji="💰" focused={focused} />,
-          }}
-        />
-        <Tabs.Screen
           name="other"
           options={{
             title: 'Tools',
@@ -142,11 +134,12 @@ export default function Layout() {
           name="settings"
           options={{
             title: 'Settings',
-            headerTitle: 'Game Settings',
+            headerTitle: 'Settings',
             tabBarIcon: ({ focused }) => <TabIcon emoji="⚙️" focused={focused} />,
           }}
         />
-        {/* Hidden - accessed via Training tab */}
+        {/* Hidden - accessed via Tools tab */}
+        <Tabs.Screen name="betting" options={{ href: null }} />
         <Tabs.Screen name="train" options={{ href: null }} />
         <Tabs.Screen name="sessions" options={{ href: null }} />
       </Tabs>

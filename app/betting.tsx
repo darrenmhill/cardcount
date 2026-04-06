@@ -9,7 +9,7 @@ import { Colors, Spacing, FontSize } from '../src/constants/theme';
 import { getRecommendedBet, getBettingSpreadTable } from '../src/engine/betting';
 import { calculateBaseHouseEdge, estimatePlayerEdge, COUNTING_SYSTEMS } from '../src/engine/countingSystems';
 
-export default function BettingScreen() {
+export function BettingContent() {
   const { trueCount, runningCount, rules, systemId } = useStore();
 
   const system = COUNTING_SYSTEMS[systemId];
@@ -22,7 +22,6 @@ export default function BettingScreen() {
   const edgeColor = playerEdge > 0 ? Colors.positive : playerEdge < 0 ? Colors.negative : Colors.neutral;
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         {/* Current recommendation */}
         <View style={styles.currentBet}>
@@ -146,6 +145,13 @@ export default function BettingScreen() {
 
         <View style={{ height: Spacing.xxl }} />
       </ScrollView>
+  );
+}
+
+export default function BettingScreen() {
+  return (
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <BettingContent />
     </SafeAreaView>
   );
 }
