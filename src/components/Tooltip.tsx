@@ -10,9 +10,10 @@ interface TooltipProps {
   body: string;
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
+  hideInfoBadge?: boolean;
 }
 
-export function Tooltip({ title, body, children, style }: TooltipProps) {
+export function Tooltip({ title, body, children, style, hideInfoBadge }: TooltipProps) {
   const [visible, setVisible] = useState(false);
 
   return (
@@ -23,9 +24,11 @@ export function Tooltip({ title, body, children, style }: TooltipProps) {
         style={[styles.trigger, style]}
       >
         {children}
-        <View style={styles.infoBadge}>
-          <Text style={styles.infoBadgeText}>i</Text>
-        </View>
+        {!hideInfoBadge && (
+          <View style={styles.infoBadge}>
+            <Text style={styles.infoBadgeText}>i</Text>
+          </View>
+        )}
       </TouchableOpacity>
 
       <Modal

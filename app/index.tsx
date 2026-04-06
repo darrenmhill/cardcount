@@ -107,7 +107,7 @@ export default function CountScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <FeltTexture />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         {/* CSM Warning */}
@@ -159,12 +159,16 @@ export default function CountScreen() {
             <Tooltip
               title="Running Count (RC)"
               body="The raw cumulative count before adjusting for remaining decks. Each card dealt adds or subtracts its system value. The RC is divided by decks remaining to get the True Count. Track this number mentally as cards are dealt."
+              hideInfoBadge
             >
               <View style={styles.rcDisplay}>
                 <Text style={styles.rcLabel}>RC</Text>
                 <Text style={styles.rcValue}>
                   {runningCount > 0 ? '+' : ''}{runningCount}
                 </Text>
+                <View style={styles.rcInfoBadge}>
+                  <Text style={styles.rcInfoBadgeText}>i</Text>
+                </View>
               </View>
             </Tooltip>
           )}
@@ -391,7 +395,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.lg,
+    paddingTop: Spacing.sm,
+    paddingBottom: Spacing.lg,
   },
   systemBadge: {
     alignItems: 'center',
@@ -448,6 +453,21 @@ const styles = StyleSheet.create({
     fontSize: FontSize.lg,
     fontFamily: Fonts.monoLight,
     fontVariant: ['tabular-nums'],
+  },
+  rcInfoBadge: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: Colors.primaryDim,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: Spacing.sm,
+  },
+  rcInfoBadgeText: {
+    color: Colors.primary,
+    fontSize: 9,
+    fontWeight: '800',
+    fontStyle: 'italic',
   },
   statsRow: {
     flexDirection: 'row',
@@ -589,14 +609,8 @@ const styles = StyleSheet.create({
   cardGrid: {
     backgroundColor: Colors.surface,
     paddingHorizontal: Spacing.xs,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.sm,
-    borderTopWidth: 0,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
-    elevation: 8,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.xs,
   },
   cardRow: {
     flexDirection: 'row',
@@ -611,8 +625,6 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.card,
     borderRadius: 6,
     borderWidth: 1,
-    borderTopWidth: 1,
-    borderTopColor: '#3a4a42',
     alignItems: 'center',
     justifyContent: 'center',
     marginHorizontal: 2,
