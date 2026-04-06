@@ -3,6 +3,11 @@ import { Card, CountingSystemId, GameRules } from '../types';
 import { COUNTING_SYSTEMS, calculateTrueCount, getDecksRemaining, getKOInitialRC, getRed7InitialRC } from '../engine/countingSystems';
 import { Storage } from './storage';
 
+interface DealtCard {
+  card: Card;
+  value: number; // actual count value used (may differ from system default for Red 7 overrides)
+}
+
 interface CardCountState {
   // Current counting system
   systemId: CountingSystemId;
@@ -16,7 +21,7 @@ interface CardCountState {
   runningCount: number;
   cardsDealt: number;
   acesDealt: number; // for side-counting systems
-  shoeHistory: Card[]; // cards dealt this shoe
+  shoeHistory: DealtCard[]; // cards dealt this shoe
 
   // Derived values
   trueCount: number;
@@ -113,7 +118,7 @@ export const useStore = create<CardCountState>((set, get) => ({
       runningCount: newRC,
       cardsDealt: newCardsDealt,
       acesDealt: newAcesDealt,
-      shoeHistory: [...state.shoeHistory, card],
+      shoeHistory: [...state.shoeHistory, { card, value }],
       trueCount: Math.round(newTC * 10) / 10, // round to 1 decimal
       decksRemaining: Math.round(newDecksRemaining * 100) / 100,
     });
@@ -123,15 +128,15 @@ export const useStore = create<CardCountState>((set, get) => ({
     const state = get();
     if (state.shoeHistory.length === 0) return;
 
-    const lastCard = state.shoeHistory[state.shoeHistory.length - 1];
+    const lastEntry = state.shoeHistory[state.shoeHistory.length - 1];
     const system = COUNTING_SYSTEMS[state.systemId];
-    const value = system.values[lastCard];
+    const value = lastEntry.value;
     const newRC = state.runningCount - value;
     const newCardsDealt = state.cardsDealt - 1;
     const totalCards = state.rules.numDecks * 52;
     const newDecksRemaining = getDecksRemaining(totalCards, newCardsDealt);
     const newTC = newCardsDealt === 0 ? 0 : calculateTrueCount(newRC, newDecksRemaining, system);
-    const newAcesDealt = lastCard === 'A' ? state.acesDealt - 1 : state.acesDealt;
+    const newAcesDealt = lastEntry.card === 'A' ? state.acesDealt - 1 : state.acesDealt;
 
     set({
       runningCount: newRC,

@@ -1,7 +1,7 @@
 import { Card, Action, CountingSystemId } from '../types';
 import { COUNTING_SYSTEMS, calculateTrueCount } from './countingSystems';
 import { generateBasicStrategy, DEALER_CARDS } from './basicStrategy';
-import { getActiveDeviations, getEffectiveIndex } from './deviations';
+import { ALL_DEVIATIONS, getActiveDeviations, getEffectiveIndex } from './deviations';
 import { GameRules } from '../types';
 
 const ALL_CARDS: Card[] = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
@@ -63,13 +63,9 @@ export function generateDeviationQuestion(
   rules: GameRules,
   systemId: CountingSystemId,
 ): DeviationQuestion {
-  const { ALL_DEVIATIONS } = require('./deviations');
-  // Pick a random deviation
-  const dev = ALL_DEVIATIONS[Math.floor(Math.random() * ALL_DEVIATIONS.length)];
-  if (dev.playerHand === 'any') {
-    // Skip insurance, recurse
-    return generateDeviationQuestion(rules, systemId);
-  }
+  // Pick a random deviation (exclude insurance which has no specific hand)
+  const eligible = ALL_DEVIATIONS.filter(d => d.playerHand !== 'any');
+  const dev = eligible[Math.floor(Math.random() * eligible.length)];
 
   const effectiveIdx = getEffectiveIndex(dev, systemId, rules.numDecks, rules.numDecks * 0.5);
 

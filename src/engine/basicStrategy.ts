@@ -88,7 +88,7 @@ function generateHardStrategy(rules: GameRules): StrategyMatrix {
   m['11'] = canDouble(11) ? {
     '2': 'Dh', '3': 'Dh', '4': 'Dh', '5': 'Dh', '6': 'Dh',
     '7': 'Dh', '8': 'Dh', '9': 'Dh', '10': 'Dh',
-    'A': numDecks === 1 ? 'Dh' : 'Dh',
+    'A': 'Dh',
   } : makeRow('H');
 
   // Hard 10
@@ -125,7 +125,7 @@ function generateHardStrategy(rules: GameRules): StrategyMatrix {
 }
 
 function generateSoftStrategy(rules: GameRules): StrategyMatrix {
-  const { dealerHitsSoft17: h17, numDecks, doubleOn, doubleAfterSplit: _das } = rules;
+  const { dealerHitsSoft17: h17, numDecks, doubleOn } = rules;
   const canDoubleAny = doubleOn === 'any';
   const m: StrategyMatrix = {};
 
