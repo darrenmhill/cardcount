@@ -2,22 +2,25 @@ import React from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { FeltTexture } from '../src/components/FeltTexture';
-import { useStore } from '../src/store/useStore';
-import { Colors, Spacing, FontSize } from '../src/constants/theme';
-import { getRecommendedBet, getBettingSpreadTable } from '../src/engine/betting';
-import { calculateBaseHouseEdge, estimatePlayerEdge, COUNTING_SYSTEMS } from '../src/engine/countingSystems';
+import { useStore } from '../store/useStore';
+import { Colors, Spacing, FontSize } from '../constants/theme';
+import { getRecommendedBet, getBettingSpreadTable } from '../engine/betting';
+import { calculateBaseHouseEdge, estimatePlayerEdge, estimateTrueCount, COUNTING_SYSTEMS } from '../engine/countingSystems';
 
 export function BettingContent() {
-  const { trueCount, runningCount, rules, systemId } = useStore();
+  const { trueCount, runningCount, rules, systemId, decksRemaining } = useStore();
 
   const system = COUNTING_SYSTEMS[systemId];
-  const tc = Math.floor(trueCount);
+  // Bet/edge math is calibrated in true count. For unbalanced systems the
+  // store's trueCount is the raw RC, so convert to an estimated TC first.
+  const effectiveTC = system.balanced
+    ? trueCount
+    : estimateTrueCount(runningCount, systemId, rules.numDecks, decksRemaining);
+  const tc = Math.floor(effectiveTC);
   const bet = getRecommendedBet(tc, rules.numDecks);
   const spreadTable = getBettingSpreadTable(rules.numDecks);
   const baseEdge = calculateBaseHouseEdge(rules);
-  const playerEdge = estimatePlayerEdge(trueCount, baseEdge);
+  const playerEdge = estimatePlayerEdge(effectiveTC, baseEdge);
 
   const edgeColor = playerEdge > 0 ? Colors.positive : playerEdge < 0 ? Colors.negative : Colors.neutral;
 
@@ -27,7 +30,7 @@ export function BettingContent() {
         <View style={styles.currentBet}>
           <Text style={styles.sectionLabel}>CURRENT RECOMMENDATION</Text>
           <Text style={[styles.betUnits, {
-            color: trueCount > 0 ? Colors.positive : Colors.neutral,
+            color: effectiveTC > 0 ? Colors.positive : Colors.neutral,
           }]}>
             {bet.units} Unit{bet.units !== 1 ? 's' : ''}
           </Text>
@@ -128,7 +131,7 @@ export function BettingContent() {
             Optimal bet size = (Edge / Variance) x Bankroll. For blackjack, variance is approximately 1.15. Most professionals use Half-Kelly (50% of optimal) to reduce variance.
           </Text>
           <Text style={styles.infoText}>
-            With the current {system.name} system and these rules, the base house edge is {baseEdge.toFixed(2)}%. Each +1 true count adds approximately 0.5% to the player's edge.
+            With the current {system.name} system and these rules, the base house edge is {baseEdge.toFixed(2)}%. Each +1 true count adds approximately 0.5% to the player&rsquo;s edge.
           </Text>
         </View>
 
@@ -148,19 +151,7 @@ export function BettingContent() {
   );
 }
 
-export default function BettingScreen() {
-  return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <BettingContent />
-    </SafeAreaView>
-  );
-}
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
   scroll: {
     flex: 1,
   },

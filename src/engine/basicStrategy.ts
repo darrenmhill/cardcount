@@ -125,7 +125,7 @@ function generateHardStrategy(rules: GameRules): StrategyMatrix {
 }
 
 function generateSoftStrategy(rules: GameRules): StrategyMatrix {
-  const { dealerHitsSoft17: h17, numDecks, doubleOn } = rules;
+  const { dealerHitsSoft17: h17, doubleOn } = rules;
   const canDoubleAny = doubleOn === 'any';
   const m: StrategyMatrix = {};
 
@@ -139,9 +139,9 @@ function generateSoftStrategy(rules: GameRules): StrategyMatrix {
     '7': 'S', '8': 'S', '9': 'S', '10': 'S', 'A': 'S',
   };
 
-  // Soft 18 (A7)
+  // Soft 18 (A7) — vs 2 the double is an H17-only play; S17 basic is stand
   m['A7'] = {
-    '2': canDoubleAny ? 'Ds' : 'S',
+    '2': h17 && canDoubleAny ? 'Ds' : 'S',
     '3': canDoubleAny ? 'Ds' : 'S',
     '4': canDoubleAny ? 'Ds' : 'S',
     '5': canDoubleAny ? 'Ds' : 'S',
@@ -199,10 +199,7 @@ function generateSoftStrategy(rules: GameRules): StrategyMatrix {
 }
 
 function generatePairStrategy(rules: GameRules): StrategyMatrix {
-  const {
-    dealerHitsSoft17: h17, numDecks, doubleAfterSplit: das,
-    surrenderAvailable: surr,
-  } = rules;
+  const { doubleAfterSplit: das, surrenderAvailable: surr } = rules;
   const m: StrategyMatrix = {};
 
   // Aces: Always split

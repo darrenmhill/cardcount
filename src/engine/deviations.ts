@@ -1,5 +1,5 @@
 import { CountingSystemId, DeviationPlay } from '../types';
-import { COUNTING_SYSTEMS, getKOInitialRC, getRed7InitialRC } from './countingSystems';
+import { COUNTING_SYSTEMS, getImbalancePerDeck, getInitialRunningCount } from './countingSystems';
 
 /**
  * The Illustrious 18 — the most important index plays.
@@ -578,19 +578,19 @@ export function getEffectiveIndex(
     return override ?? dev.index;
   }
 
-  // For unbalanced systems (KO, Red 7), convert TC index to RC threshold
-  // RC threshold ≈ TC_index × decks_remaining + IRC
+  // For unbalanced systems (KO, Red 7), convert the TC index to an RC threshold.
+  // The RC of an unbalanced count drifts upward as the shoe depletes
+  // (by `imbalance` per deck dealt), so the accumulated drift must be added:
+  //   RC_threshold = TC_index × decks_remaining + IRC + imbalance × decks_dealt
+  // For KO (imbalance +4/deck, IRC = 4 − 4N) this reduces to
+  //   RC_threshold = 4 + (TC_index − 4) × decks_remaining
+  // e.g. 6-deck KO insurance (TC +3): −2 at a fresh shoe, +1 with 3 decks left.
   const hiLoIndex = override ?? dev.index;
-  const irc = systemId === 'ko'
-    ? getKOInitialRC(numDecks)
-    : getRed7InitialRC(numDecks);
-
-  // Pivot point: the RC value equivalent to TC 0
-  // For KO 6-deck: IRC = -20, pivot ≈ +4 (where advantage starts)
-  // Convert: RC_threshold = hiLoIndex * decksRemaining + IRC + (numDecks * tag_sum_offset)
-  // Simplified: use the standard conversion RC = TC * decks_remaining
-  // But for unbalanced, we offset by the IRC
-  return Math.round(hiLoIndex * decksRemaining + irc);
+  const irc = getInitialRunningCount(systemId, numDecks);
+  const decksDealt = numDecks - decksRemaining;
+  return Math.round(
+    hiLoIndex * decksRemaining + irc + getImbalancePerDeck(systemId) * decksDealt,
+  );
 }
 
 /**
@@ -603,7 +603,6 @@ export function getActiveDeviations(
   numDecks: number = 6,
   decksRemaining: number = 6,
 ): DeviationPlay[] {
-  const system = COUNTING_SYSTEMS[systemId];
   // For unbalanced systems, trueCount is actually the running count
   const countValue = trueCount;
 

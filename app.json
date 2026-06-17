@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "cardcount",
+    "name": "Blackjack Counter Pro",
     "slug": "cardcount",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -16,7 +16,7 @@
     "backgroundColor": "#0b0f0d",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.darren.cardcount",
+      "bundleIdentifier": "com.inzite.blackjackcounterpro",
       "buildNumber": "1",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false

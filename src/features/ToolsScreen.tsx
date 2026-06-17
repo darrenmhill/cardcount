@@ -3,24 +3,30 @@ import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput, Modal, Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useStore } from '../src/store/useStore';
-import { Colors, Spacing, FontSize } from '../src/constants/theme';
+import { useStore } from '../store/useStore';
+import { Colors, Spacing, FontSize } from '../constants/theme';
 import {
-  riskOfRuin, recommendedBankroll, optimalBetRamp, varianceSimulation, hourlyEV,
-} from '../src/engine/bankroll';
-import { calculateBaseHouseEdge } from '../src/engine/countingSystems';
-import { calculatePerformanceStats, DrillResult } from '../src/engine/training';
-import { Session, loadSessions, saveSessions, loadDrillResults } from '../src/store/sessions';
+  riskOfRuinContinuous, recommendedBankroll, optimalBetRamp, varianceSimulation, hourlyEV,
+} from '../engine/bankroll';
+import { calculateBaseHouseEdge } from '../engine/countingSystems';
+import { calculatePerformanceStats, DrillResult } from '../engine/training';
+import { Session, loadSessions, saveSessions, loadDrillResults } from '../store/sessions';
+import { GameRules } from '../types';
+import { TrainContent } from './TrainContent';
+import { BettingContent } from './BettingContent';
+import { ConfirmModal } from '../components/ConfirmModal';
 
-type Tab = 'sessions' | 'bankroll' | 'stats' | 'variance';
+type Tab = 'betting' | 'train' | 'sessions' | 'bankroll' | 'stats' | 'variance';
 
-export default function SessionsScreen() {
-  const [activeTab, setActiveTab] = useState<Tab>('sessions');
+export default function ToolsScreen() {
+  const [activeTab, setActiveTab] = useState<Tab>('betting');
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabBar}>
         {([
+          { key: 'betting', label: 'Betting' },
+          { key: 'train', label: 'Train' },
           { key: 'sessions', label: 'Sessions' },
           { key: 'bankroll', label: 'Bankroll' },
           { key: 'stats', label: 'Stats' },
@@ -36,7 +42,9 @@ export default function SessionsScreen() {
         ))}
       </ScrollView>
 
-      {activeTab === 'sessions' ? <SessionsTab /> :
+      {activeTab === 'betting' ? <BettingContent /> :
+       activeTab === 'train' ? <TrainTab /> :
+       activeTab === 'sessions' ? <SessionsTab /> :
        activeTab === 'bankroll' ? <BankrollTab /> :
        activeTab === 'stats' ? <StatsTab /> :
        <VarianceTab />}
@@ -44,11 +52,16 @@ export default function SessionsScreen() {
   );
 }
 
+function TrainTab() {
+  return <TrainContent />;
+}
+
 // ---- Sessions Tab ----
 
 function SessionsTab() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [showAdd, setShowAdd] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Session | null>(null);
   const { rules } = useStore();
 
   useEffect(() => { loadSessions().then(setSessions); }, []);
@@ -109,7 +122,7 @@ function SessionsTab() {
         <TouchableOpacity
           key={s.id}
           style={styles.sessionCard}
-          onLongPress={() => deleteSession(s.id)}
+          onLongPress={() => setPendingDelete(s)}
         >
           <View style={styles.sessionHeader}>
             <Text style={styles.sessionCasino}>{s.casino || 'Unknown'}</Text>
@@ -129,18 +142,38 @@ function SessionsTab() {
         </TouchableOpacity>
       ))}
 
+      {sessions.length > 0 && (
+        <Text style={styles.deleteHint}>Long-press a session to delete it.</Text>
+      )}
+
       <AddSessionModal
         visible={showAdd}
         rules={rules}
         onAdd={addSession}
         onCancel={() => setShowAdd(false)}
       />
+
+      <ConfirmModal
+        visible={pendingDelete !== null}
+        title="Delete Session"
+        message={pendingDelete
+          ? `Delete the ${pendingDelete.casino || 'Unknown'} session (${pendingDelete.result >= 0 ? '+' : ''}${pendingDelete.result} units)? This cannot be undone.`
+          : ''}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        destructive
+        onConfirm={() => {
+          if (pendingDelete) deleteSession(pendingDelete.id);
+          setPendingDelete(null);
+        }}
+        onCancel={() => setPendingDelete(null)}
+      />
     </ScrollView>
   );
 }
 
 function AddSessionModal({ visible, rules, onAdd, onCancel }: {
-  visible: boolean; rules: any; onAdd: (s: Session) => void; onCancel: () => void;
+  visible: boolean; rules: GameRules; onAdd: (s: Session) => void; onCancel: () => void;
 }) {
   const [casino, setCasino] = useState('');
   const [result, setResult] = useState('');
@@ -200,9 +233,16 @@ function BankrollTab() {
   const unit = parseInt(unitSize) || 25;
 
   const baseEdge = calculateBaseHouseEdge(rules);
-  const rec = recommendedBankroll(rules, 12);
-  const ror = riskOfRuin(bankrollUnits, -baseEdge + 2 * 0.5);
+  const spreadMax = rules.numDecks <= 2 ? 8 : 12;
+  const rec = recommendedBankroll(rules, spreadMax);
   const ramp = optimalBetRamp(rules, bankrollUnits, kellyPct / 100);
+  // Average bet over the +EV portion of the ramp — scales with the Kelly
+  // fraction, so a more aggressive setting raises the risk of ruin.
+  const positiveBets = ramp.filter(r => r.edge > 0 && r.tc <= 5);
+  const avgBetUnits = positiveBets.length
+    ? positiveBets.reduce((s, r) => s + r.units, 0) / positiveBets.length
+    : 1;
+  const ror = riskOfRuinContinuous(bankrollUnits, (-baseEdge + 2 * 0.5) / 100, avgBetUnits);
   const hev = hourlyEV(-baseEdge + 1.5 * 0.5, unit * 3, 80);
 
   return (
@@ -354,7 +394,7 @@ function StatsTab() {
 function VarianceTab() {
   const { rules } = useStore();
   const [hands, setHands] = useState(1000);
-  const [avgBet, setAvgBet] = useState(4);
+  const [avgBet] = useState(4);
 
   const baseEdge = calculateBaseHouseEdge(rules);
   const avgEdge = -baseEdge + 1.5 * 0.5; // assume avg TC +1.5 while playing
@@ -496,6 +536,7 @@ const styles = StyleSheet.create({
   addBtnText: { color: Colors.text, fontSize: FontSize.md, fontWeight: '700' },
 
   emptyText: { color: Colors.textDim, fontSize: FontSize.md, textAlign: 'center', marginTop: Spacing.xxl },
+  deleteHint: { color: Colors.textDim, fontSize: FontSize.xs, textAlign: 'center', marginTop: Spacing.sm },
 
   sessionCard: {
     backgroundColor: Colors.surface, borderRadius: 10, padding: Spacing.md,

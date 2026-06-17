@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Colors, Spacing, FontSize } from '../constants/theme';
+import { Colors, Spacing } from '../constants/theme';
 
 interface ShoeProgressProps {
   cardsDealt: number;

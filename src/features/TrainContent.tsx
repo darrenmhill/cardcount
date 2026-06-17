@@ -2,18 +2,17 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, TextInput,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useStore } from '../src/store/useStore';
-import { Colors, Spacing, FontSize } from '../src/constants/theme';
-import { COUNTING_SYSTEMS } from '../src/engine/countingSystems';
-import { getActionColor, getActionName } from '../src/engine/basicStrategy';
+import { useStore } from '../store/useStore';
+import { Colors, Spacing, FontSize } from '../constants/theme';
+import { COUNTING_SYSTEMS } from '../engine/countingSystems';
+import { getActionColor, getActionName } from '../engine/basicStrategy';
 import {
-  randomCard, correctRunningCount, generateStrategyQuestion,
+  generateDrillCards, correctDrillCount, generateStrategyQuestion,
   generateDeviationQuestion, generateTCQuestion,
-  DrillResult, StrategyQuestion, DeviationQuestion, TCConversionQuestion,
-} from '../src/engine/training';
-import { loadDrillResults, saveDrillResults } from '../src/store/sessions';
-import { Card, Action, CountingSystemId } from '../src/types';
+  DrillResult, SpeedCard, StrategyQuestion, DeviationQuestion, TCConversionQuestion,
+} from '../engine/training';
+import { loadDrillResults, saveDrillResults } from '../store/sessions';
+import { Action, CountingSystemId, GameRules } from '../types';
 
 type DrillType = 'menu' | 'speed' | 'strategy' | 'deviation' | 'tc';
 
@@ -35,14 +34,6 @@ export function TrainContent() {
         <TCDrill onBack={() => setDrill('menu')} />
       ) : null}
     </View>
-  );
-}
-
-export default function TrainScreen() {
-  return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <TrainContent />
-    </SafeAreaView>
   );
 }
 
@@ -103,7 +94,7 @@ function SpeedDrill({ systemId, onBack }: { systemId: CountingSystemId; onBack: 
   const [phase, setPhase] = useState<'setup' | 'running' | 'answer' | 'result'>('setup');
   const [speed, setSpeed] = useState(1500); // ms per card
   const [cardCount, setCardCount] = useState(20);
-  const [cards, setCards] = useState<Card[]>([]);
+  const [cards, setCards] = useState<SpeedCard[]>([]);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [userAnswer, setUserAnswer] = useState('');
   const [correctAnswer, setCorrectAnswer] = useState(0);
@@ -111,10 +102,10 @@ function SpeedDrill({ systemId, onBack }: { systemId: CountingSystemId; onBack: 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const startDrill = () => {
-    const newCards = Array.from({ length: cardCount }, () => randomCard());
+    const newCards = generateDrillCards(cardCount);
     setCards(newCards);
     setCurrentIdx(0);
-    setCorrectAnswer(correctRunningCount(newCards, systemId as any));
+    setCorrectAnswer(correctDrillCount(newCards, systemId));
     setStartTime(Date.now());
     setPhase('running');
   };
@@ -143,11 +134,6 @@ function SpeedDrill({ systemId, onBack }: { systemId: CountingSystemId; onBack: 
     };
     saveDrillResult(result);
     setPhase('result');
-  };
-
-  const getCardColor = (card: Card): string => {
-    const val = system.values[card];
-    return val > 0 ? Colors.positive : val < 0 ? Colors.negative : Colors.textDim;
   };
 
   return (
@@ -192,10 +178,7 @@ function SpeedDrill({ systemId, onBack }: { systemId: CountingSystemId; onBack: 
       )}
 
       {phase === 'running' && currentIdx < cards.length && (() => {
-        const card = cards[currentIdx];
-        const suits = ['♠', '♥', '♦', '♣'] as const;
-        const suit = suits[(currentIdx * 7 + card.charCodeAt(0)) % 4]; // deterministic but varied
-        const isRed = suit === '♥' || suit === '♦';
+        const { card, suit, isRed } = cards[currentIdx];
         const suitColor = isRed ? '#ef4444' : '#1a1a2e';
         return (
           <View style={styles.flashContainer}>
@@ -262,13 +245,15 @@ function SpeedDrill({ systemId, onBack }: { systemId: CountingSystemId; onBack: 
 
 const DRILL_ROUNDS = 20;
 
-function StrategyDrill({ rules, onBack }: { rules: any; onBack: () => void }) {
+function StrategyDrill({ rules, onBack }: { rules: GameRules; onBack: () => void }) {
   const [question, setQuestion] = useState<StrategyQuestion | null>(null);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [done, setDone] = useState(false);
   const [startTime] = useState(Date.now());
 
+  // Snapshot the rules at drill start; a drill run shouldn't shift mid-session.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setQuestion(generateStrategyQuestion(rules)); }, []);
 
   const answer = (action: Action) => {
@@ -374,7 +359,7 @@ function StrategyDrill({ rules, onBack }: { rules: any; onBack: () => void }) {
 
 // ---- Deviation Drill ----
 
-function DeviationDrill({ rules, systemId, onBack }: { rules: any; systemId: CountingSystemId; onBack: () => void }) {
+function DeviationDrill({ rules, systemId, onBack }: { rules: GameRules; systemId: CountingSystemId; onBack: () => void }) {
   const system = COUNTING_SYSTEMS[systemId];
   const [question, setQuestion] = useState<DeviationQuestion | null>(null);
   const [feedback, setFeedback] = useState<'correct' | 'wrong' | null>(null);
@@ -386,6 +371,8 @@ function DeviationDrill({ rules, systemId, onBack }: { rules: any; systemId: Cou
     setQuestion(generateDeviationQuestion(rules, systemId));
   }, [rules, systemId]);
 
+  // First question on mount; nextQuestion already captures current rules/system.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { nextQuestion(); }, []);
 
   const answerDeviation = (userChoseDeviate: boolean) => {

@@ -62,7 +62,7 @@ export default function Layout() {
 
   useEffect(() => {
     loadSettings();
-  }, []);
+  }, [loadSettings]);
 
   if (!fontsLoaded) {
     return (
@@ -138,10 +138,6 @@ export default function Layout() {
             tabBarIcon: ({ focused }) => <TabIcon emoji="⚙️" focused={focused} />,
           }}
         />
-        {/* Hidden - accessed via Tools tab */}
-        <Tabs.Screen name="betting" options={{ href: null }} />
-        <Tabs.Screen name="train" options={{ href: null }} />
-        <Tabs.Screen name="sessions" options={{ href: null }} />
       </Tabs>
     </>
   );

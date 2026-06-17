@@ -1,4 +1,4 @@
-import { Card, CountingSystem, CountingSystemId } from '../types';
+import { CountingSystem, CountingSystemId } from '../types';
 
 // All major card counting systems used by professional players
 export const COUNTING_SYSTEMS: Record<CountingSystemId, CountingSystem> = {
@@ -123,10 +123,6 @@ export const COUNTING_SYSTEMS: Record<CountingSystemId, CountingSystem> = {
   },
 };
 
-export function getCardValue(card: Card, system: CountingSystem): number {
-  return system.values[card];
-}
-
 export function calculateTrueCount(
   runningCount: number,
   decksRemaining: number,
@@ -150,33 +146,59 @@ export function getDecksRemaining(
   return (totalCards - cardsDealt) / 52;
 }
 
-/**
- * For unbalanced systems, calculate the "key count" / "pivot point"
- * where the player has the advantage
- */
-export function getKOKeyCount(numDecks: number): number {
-  // KO key count (pivot) — the RC at which the player has the advantage.
-  // For a standard 52-card deck: IRC + (number of cards × imbalance/52)
-  // KO has an imbalance of +4 per deck (one extra +1 card: the 7).
-  // Pivot = IRC + totalCards × (4/52) ≈ IRC + numDecks × 4
-  // This simplifies to: (4 - 4*numDecks) + 4*numDecks = +4
-  // In practice the standard pivot is approximately +2 to +4 depending on source.
-  // Using the Fuchs & Vancura published pivots:
-  switch (numDecks) {
-    case 1: return +2;
-    case 2: return +1;
-    case 6: return +2;
-    case 8: return +2;
-    default: return +2;
-  }
-}
-
 export function getKOInitialRC(numDecks: number): number {
   return 4 - (4 * numDecks);
 }
 
 export function getRed7InitialRC(numDecks: number): number {
   return -2 * numDecks;
+}
+
+export function getInitialRunningCount(
+  systemId: CountingSystemId,
+  numDecks: number,
+): number {
+  if (systemId === 'ko') return getKOInitialRC(numDecks);
+  if (systemId === 'red-7') return getRed7InitialRC(numDecks);
+  return 0;
+}
+
+/**
+ * Net sum of count tags across one full 52-card deck.
+ * Zero for balanced systems; the RC of an unbalanced system drifts
+ * upward by this amount for every deck dealt from a neutral shoe.
+ */
+export function getImbalancePerDeck(systemId: CountingSystemId): number {
+  if (systemId === 'ko') return 4;   // 7s count +1 (4 extra plus-cards/deck)
+  if (systemId === 'red-7') return 2; // red 7s count +1 (2 extra plus-cards/deck)
+  return 0;
+}
+
+/**
+ * Estimate the Hi-Lo-equivalent true count for any system.
+ * For balanced systems this is the standard RC / decks-remaining conversion.
+ * For unbalanced systems (KO, Red 7), the IRC and the imbalance accumulated
+ * over the decks already dealt must be removed before dividing:
+ *   estTC = (RC − IRC − imbalance × decksDealt) / decksRemaining
+ * Used for betting/edge math, which is calibrated in true count.
+ */
+export function estimateTrueCount(
+  runningCount: number,
+  systemId: CountingSystemId,
+  numDecks: number,
+  decksRemaining: number,
+): number {
+  const system = COUNTING_SYSTEMS[systemId];
+  if (system.balanced) {
+    return calculateTrueCount(runningCount, decksRemaining, system);
+  }
+  const irc = getInitialRunningCount(systemId, numDecks);
+  const decksDealt = numDecks - decksRemaining;
+  const adjustedRC = runningCount - irc - getImbalancePerDeck(systemId) * decksDealt;
+  if (decksRemaining < 0.25) {
+    return Math.max(-15, Math.min(15, adjustedRC * 4));
+  }
+  return Math.max(-15, Math.min(15, adjustedRC / decksRemaining));
 }
 
 /**

@@ -3,7 +3,6 @@ import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { FeltTexture } from '../src/components/FeltTexture';
 import { useStore } from '../src/store/useStore';
 import { Colors, Spacing, FontSize } from '../src/constants/theme';
 import { generateBasicStrategy, DEALER_CARDS, HARD_TOTALS, SOFT_TOTALS, PAIRS, getActionColor, getActionName } from '../src/engine/basicStrategy';
@@ -180,7 +179,7 @@ export default function StrategyScreen() {
         <View style={styles.modeInfo}>
           {showDefault ? (
             <Text style={styles.modeText}>
-              Showing standard basic strategy for current rules. Toggle to "Adjusted" to see count-based deviations applied.
+              Showing standard basic strategy for current rules. Toggle to &ldquo;Adjusted&rdquo; to see count-based deviations applied.
             </Text>
           ) : (
             <Text style={styles.modeText}>

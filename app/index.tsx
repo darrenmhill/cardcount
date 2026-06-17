@@ -5,10 +5,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useStore } from '../src/store/useStore';
 import { Colors, Spacing, FontSize, Fonts } from '../src/constants/theme';
-import { COUNTING_SYSTEMS } from '../src/engine/countingSystems';
+import { COUNTING_SYSTEMS, calculateBaseHouseEdge, estimatePlayerEdge, estimateTrueCount } from '../src/engine/countingSystems';
 import { getRecommendedBet } from '../src/engine/betting';
 import { getActiveDeviations } from '../src/engine/deviations';
-import { calculateBaseHouseEdge, estimatePlayerEdge } from '../src/engine/countingSystems';
 import { Card } from '../src/types';
 import { Tooltip } from '../src/components/Tooltip';
 import { ConfirmModal } from '../src/components/ConfirmModal';
@@ -61,9 +60,14 @@ export default function CountScreen() {
   const totalCards = rules.numDecks * 52;
   const cardsRemaining = totalCards - cardsDealt;
   const penetrationPct = ((cardsDealt / totalCards) * 100).toFixed(0);
-  const bet = getRecommendedBet(Math.floor(trueCount), rules.numDecks);
+  // Bet/edge math is calibrated in true count. For unbalanced systems the
+  // store's trueCount is the raw RC, so convert to an estimated TC first.
+  const effectiveTC = system.balanced
+    ? trueCount
+    : estimateTrueCount(runningCount, systemId, rules.numDecks, decksRemaining);
+  const bet = getRecommendedBet(Math.floor(effectiveTC), rules.numDecks);
   const baseEdge = calculateBaseHouseEdge(rules);
-  const playerEdge = estimatePlayerEdge(trueCount, baseEdge);
+  const playerEdge = estimatePlayerEdge(effectiveTC, baseEdge);
   const activeDevs = cardsDealt > 0
     ? getActiveDeviations(trueCount, rules.surrenderAvailable !== 'none', systemId, rules.numDecks, decksRemaining)
     : [];
@@ -90,13 +94,6 @@ export default function CountScreen() {
 
   const getRemainingForCard = (card: Card): number => {
     return getMaxForCard(card) - (dealtCounts[card] || 0);
-  };
-
-  const getCardCountValue = (card: Card): string => {
-    const val = system.values[card];
-    if (val > 0) return `+${val}`;
-    if (val < 0) return `${val}`;
-    return '0';
   };
 
   const getCardColor = (card: Card): string => {

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Card, CountingSystemId, GameRules } from '../types';
-import { COUNTING_SYSTEMS, calculateTrueCount, getDecksRemaining, getKOInitialRC, getRed7InitialRC } from '../engine/countingSystems';
+import { COUNTING_SYSTEMS, calculateTrueCount, getDecksRemaining, getInitialRunningCount } from '../engine/countingSystems';
 import { Storage } from './storage';
 
 interface DealtCard {
@@ -37,6 +37,9 @@ interface CardCountState {
   saveSettings: () => Promise<void>;
 }
 
+// Deck counts the house-edge model and presets support; anything else is rejected on load.
+const VALID_DECK_COUNTS: GameRules['numDecks'][] = [1, 2, 4, 6, 8];
+
 const DEFAULT_RULES: GameRules = {
   numDecks: 6,
   dealerHitsSoft17: true,
@@ -56,12 +59,6 @@ const DEFAULT_RULES: GameRules = {
   doubleAfterHit: false,
 };
 
-function getInitialRC(systemId: CountingSystemId, numDecks: number): number {
-  if (systemId === 'ko') return getKOInitialRC(numDecks);
-  if (systemId === 'red-7') return getRed7InitialRC(numDecks);
-  return 0;
-}
-
 export const useStore = create<CardCountState>((set, get) => ({
   systemId: 'hi-lo',
   rules: DEFAULT_RULES,
@@ -74,7 +71,7 @@ export const useStore = create<CardCountState>((set, get) => ({
 
   setSystem: (id) => {
     const state = get();
-    const initialRC = getInitialRC(id, state.rules.numDecks);
+    const initialRC = getInitialRunningCount(id, state.rules.numDecks);
     set({
       systemId: id,
       runningCount: initialRC,
@@ -90,16 +87,22 @@ export const useStore = create<CardCountState>((set, get) => ({
   updateRules: (partial) => {
     const state = get();
     const newRules = { ...state.rules, ...partial };
-    const initialRC = getInitialRC(state.systemId, newRules.numDecks);
-    set({
-      rules: newRules,
-      runningCount: initialRC,
-      cardsDealt: 0,
-      acesDealt: 0,
-      shoeHistory: [],
-      trueCount: 0,
-      decksRemaining: newRules.numDecks,
-    });
+    // Only a deck-count change invalidates the running count;
+    // other rule tweaks (payouts, surrender, penetration…) keep the shoe intact.
+    if (newRules.numDecks !== state.rules.numDecks) {
+      const initialRC = getInitialRunningCount(state.systemId, newRules.numDecks);
+      set({
+        rules: newRules,
+        runningCount: initialRC,
+        cardsDealt: 0,
+        acesDealt: 0,
+        shoeHistory: [],
+        trueCount: 0,
+        decksRemaining: newRules.numDecks,
+      });
+    } else {
+      set({ rules: newRules });
+    }
     get().saveSettings();
   },
 
@@ -150,7 +153,7 @@ export const useStore = create<CardCountState>((set, get) => ({
 
   resetShoe: () => {
     const state = get();
-    const initialRC = getInitialRC(state.systemId, state.rules.numDecks);
+    const initialRC = getInitialRunningCount(state.systemId, state.rules.numDecks);
     set({
       runningCount: initialRC,
       cardsDealt: 0,
@@ -166,9 +169,17 @@ export const useStore = create<CardCountState>((set, get) => ({
       const data = await Storage.get();
       if (data) {
         const parsed = JSON.parse(data);
-        const loadedSystem = parsed.systemId || 'hi-lo';
+        // Validate persisted values — corrupt/tampered storage must never crash
+        // the app (an unknown systemId would make COUNTING_SYSTEMS[id] undefined).
+        const loadedSystem: CountingSystemId =
+          parsed.systemId && COUNTING_SYSTEMS[parsed.systemId as CountingSystemId]
+            ? parsed.systemId
+            : 'hi-lo';
         const loadedRules = { ...DEFAULT_RULES, ...parsed.rules };
-        const initialRC = getInitialRC(loadedSystem, loadedRules.numDecks);
+        if (!VALID_DECK_COUNTS.includes(loadedRules.numDecks)) {
+          loadedRules.numDecks = DEFAULT_RULES.numDecks;
+        }
+        const initialRC = getInitialRunningCount(loadedSystem, loadedRules.numDecks);
         set({
           systemId: loadedSystem,
           rules: loadedRules,

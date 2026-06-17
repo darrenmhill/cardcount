@@ -1,25 +1,51 @@
-import { Card, Action, CountingSystemId } from '../types';
-import { COUNTING_SYSTEMS, calculateTrueCount } from './countingSystems';
+import { Card, Action, CountingSystemId, GameRules } from '../types';
+import { COUNTING_SYSTEMS } from './countingSystems';
 import { generateBasicStrategy, DEALER_CARDS } from './basicStrategy';
-import { ALL_DEVIATIONS, getActiveDeviations, getEffectiveIndex } from './deviations';
-import { GameRules } from '../types';
+import { ALL_DEVIATIONS, getEffectiveIndex } from './deviations';
 
 const ALL_CARDS: Card[] = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+const SUITS = ['♠', '♥', '♦', '♣'] as const;
+export type Suit = (typeof SUITS)[number];
+
+/** A dealt card for the speed drill, including its suit so red/black can be shown. */
+export interface SpeedCard {
+  card: Card;
+  suit: Suit;
+  isRed: boolean;
+}
 
 /** Generate a random card */
 export function randomCard(): Card {
   return ALL_CARDS[Math.floor(Math.random() * ALL_CARDS.length)];
 }
 
-/** Generate a sequence of random cards for speed counting */
-export function generateDeck(count: number): Card[] {
-  return Array.from({ length: count }, () => randomCard());
+/**
+ * Generate a sequence of cards (with suits) for the speed-counting drill.
+ * The suit is generated up front so the displayed colour matches the count —
+ * this matters for the Red 7 system, where red 7s count +1 and black 7s 0.
+ */
+export function generateDrillCards(count: number): SpeedCard[] {
+  return Array.from({ length: count }, () => {
+    const card = randomCard();
+    const suit = SUITS[Math.floor(Math.random() * SUITS.length)];
+    return { card, suit, isRed: suit === '♥' || suit === '♦' };
+  });
 }
 
-/** Calculate the correct running count for a sequence */
-export function correctRunningCount(cards: Card[], systemId: CountingSystemId): number {
+/**
+ * Calculate the correct running count for a drill sequence.
+ * For the Red 7 system a 7's value depends on its colour (red +1, black 0);
+ * every other system uses the fixed per-rank tag.
+ */
+export function correctDrillCount(cards: SpeedCard[], systemId: CountingSystemId): number {
   const system = COUNTING_SYSTEMS[systemId];
-  return cards.reduce((sum, card) => sum + system.values[card], 0);
+  return cards.reduce((sum, { card, isRed }) => {
+    if (systemId === 'red-7' && card === '7') {
+      return sum + (isRed ? 1 : 0);
+    }
+    return sum + system.values[card];
+  }, 0);
 }
 
 // ---- Basic Strategy Quiz ----

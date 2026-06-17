@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, Modal, Pressable,
-  LayoutRectangle, StyleProp, ViewStyle,
+  StyleProp, ViewStyle,
 } from 'react-native';
 import { Colors, Spacing, FontSize } from '../constants/theme';
 

@@ -24,9 +24,12 @@ const server = http.createServer((req, res) => {
   const urlPath = decodeURIComponent(req.url.split('?')[0]);
   let filePath = path.join(DIST, urlPath === '/' ? 'index.html' : urlPath);
 
-  // Prevent path traversal: ensure resolved path is within DIST
+  // Prevent path traversal: ensure resolved path is within DIST.
+  // Compare against DIST + separator so a sibling like `dist-evil` can't slip
+  // through the prefix check (while still allowing the DIST root itself).
   const resolvedPath = path.resolve(filePath);
-  if (!resolvedPath.startsWith(path.resolve(DIST))) {
+  const distRoot = path.resolve(DIST);
+  if (resolvedPath !== distRoot && !resolvedPath.startsWith(distRoot + path.sep)) {
     res.writeHead(403);
     res.end('Forbidden');
     return;
@@ -47,7 +50,12 @@ const server = http.createServer((req, res) => {
       res.end('Not found');
       return;
     }
-    res.writeHead(200, { 'Content-Type': contentType });
+    res.writeHead(200, {
+      'Content-Type': contentType,
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'SAMEORIGIN',
+      'Referrer-Policy': 'no-referrer',
+    });
     res.end(data);
   });
 });

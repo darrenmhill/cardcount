@@ -33,8 +33,12 @@ async function setItem(key: string, value: string): Promise<void> {
 }
 
 export async function loadSessions(): Promise<Session[]> {
-  const data = await getItem(SESSIONS_KEY);
-  return data ? JSON.parse(data) : [];
+  try {
+    const data = await getItem(SESSIONS_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return []; // corrupted/unreadable storage — start fresh
+  }
 }
 
 export async function saveSessions(sessions: Session[]): Promise<void> {
@@ -42,8 +46,12 @@ export async function saveSessions(sessions: Session[]): Promise<void> {
 }
 
 export async function loadDrillResults(): Promise<DrillResult[]> {
-  const data = await getItem(DRILLS_KEY);
-  return data ? JSON.parse(data) : [];
+  try {
+    const data = await getItem(DRILLS_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return []; // corrupted/unreadable storage — start fresh
+  }
 }
 
 export async function saveDrillResults(results: DrillResult[]): Promise<void> {

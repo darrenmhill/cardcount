@@ -1,4 +1,4 @@
-import { GameRules, BettingSpread } from '../types';
+import { GameRules } from '../types';
 import { calculateBaseHouseEdge } from './countingSystems';
 
 /**
@@ -19,8 +19,29 @@ export function riskOfRuin(
 }
 
 /**
- * Calculate recommended minimum bankroll for a given spread and rules
- * Based on Kelly criterion with safety margin
+ * Continuous (exponential) approximation of lifetime Risk of Ruin:
+ *   RoR = exp(−2 · bankroll · edge / (avgBet · sd²))
+ * Bankroll and avgBet are in betting units; `edgeFraction` is the per-hand
+ * win-rate as a fraction (0.01 = +1%). Unlike the flat-bet `riskOfRuin`,
+ * this scales with the average bet, so a more aggressive ramp (larger
+ * average bet) correctly raises the risk and a bigger bankroll lowers it.
+ */
+export function riskOfRuinContinuous(
+  bankrollUnits: number,
+  edgeFraction: number,
+  avgBetUnits: number,
+  sd: number = 1.15,
+): number {
+  if (edgeFraction <= 0 || avgBetUnits <= 0) return 1;
+  const exponent = (-2 * bankrollUnits * edgeFraction) / (avgBetUnits * sd * sd);
+  return Math.min(1, Math.exp(exponent));
+}
+
+/**
+ * Calculate recommended minimum bankroll for a given spread and rules.
+ * Solves the continuous RoR formula for bankroll at the target risk, scaling
+ * with the spread's max bet (a wider spread → larger average bet → more
+ * bankroll required).
  */
 export function recommendedBankroll(
   rules: GameRules,
@@ -28,21 +49,22 @@ export function recommendedBankroll(
   targetRoR: number = 0.05, // 5% risk of ruin
 ): { units: number; description: string } {
   const baseEdge = calculateBaseHouseEdge(rules);
-  // Approximate average edge with spread: ~0.5-1.5% for typical conditions
-  const avgEdge = Math.max(0.1, -baseEdge + 2 * 0.5); // assume avg TC of +2 when betting big
+  // Representative edge while betting big (assume avg TC of +2).
+  const avgEdge = Math.max(0.1, -baseEdge + 2 * 0.5) / 100;
   const sd = 1.15;
 
-  // RoR = base^(bankroll/unit)
-  // Solving for bankroll: bankroll = ln(RoR) / ln(base)
-  const ratio = (avgEdge / 100) / sd;
-  if (ratio <= 0) return { units: 1000, description: 'Edge too small to calculate — use 1000 units minimum' };
+  // The average bet across a 1→maxBet ramp sits well below the max because
+  // high counts are infrequent; ~40% of max is a reasonable approximation.
+  const avgBetUnits = Math.max(1, maxBetUnits * 0.4);
 
-  const base = (1 - ratio) / (1 + ratio);
-  const bankrollUnits = Math.ceil(Math.log(targetRoR) / Math.log(base));
+  // RoR = exp(−2·B·edge / (avgBet·sd²))  ⇒  B = −ln(RoR)·avgBet·sd² / (2·edge)
+  const bankrollUnits = Math.ceil(
+    (-Math.log(targetRoR) * avgBetUnits * sd * sd) / (2 * avgEdge),
+  );
 
   return {
     units: bankrollUnits,
-    description: `${bankrollUnits} units for ${(targetRoR * 100).toFixed(0)}% risk of ruin with ${maxBetUnits}x max bet`,
+    description: `${bankrollUnits} units for ${(targetRoR * 100).toFixed(0)}% risk of ruin at a ${maxBetUnits}x max bet`,
   };
 }
 
